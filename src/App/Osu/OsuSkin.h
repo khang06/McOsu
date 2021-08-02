@@ -336,6 +336,12 @@ public:
 	inline bool isDefaultSkin() const {return m_bIsDefaultSkin;}
 	inline int getSampleSet() const {return m_iSampleSet;}
 
+	// dancing cat
+	inline Image *getDanceFrame0() {return m_danceFrame0;}
+	inline Image *getDanceFrame1() {return m_danceFrame1;}
+	inline Image *getDanceFrame2() {return m_danceFrame2;}
+	inline Image *getDanceFrame3() {return m_danceFrame3;}
+
 private:
 	static ConVar *m_osu_skin_ref;
 	static ConVar *m_osu_mod_fposu_ref;
@@ -683,6 +689,12 @@ private:
 	bool m_bIsRandomElements;
 
 	std::vector<UString> m_filepathsForExport;
+
+	// dancing cat
+	Image *m_danceFrame0;
+	Image *m_danceFrame1;
+	Image *m_danceFrame2;
+	Image *m_danceFrame3;
 };
 
 #endif

@@ -448,6 +448,7 @@ public:
 	inline const int getNumObjects() const {return m_iNumObjects.load();}
 	inline const int getNumCircles() const {return m_iNumCircles.load();}
 	inline const int getNumSpinners() const {return m_iNumSpinners.load();}
+	inline const int getMaxPossibleCombo() const {return m_iMaxPossibleCombo.load();}
 
 private:
 	virtual void init();
@@ -477,7 +478,7 @@ private:
 	std::atomic<int> m_iNumObjects;
 	std::atomic<int> m_iNumCircles;
 	std::atomic<int> m_iNumSpinners;
-	int m_iMaxPossibleCombo;
+	std::atomic<int> m_iMaxPossibleCombo;
 };
 
 #endif

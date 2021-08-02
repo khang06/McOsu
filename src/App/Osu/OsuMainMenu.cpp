@@ -45,9 +45,9 @@
 
 #define MCOSU_VERSION_TEXT "Version"
 #define MCOSU_BANNER_TEXT "-- dev --"
-UString OsuMainMenu::MCOSU_MAIN_BUTTON_TEXT = UString("McOsu");
-UString OsuMainMenu::MCOSU_MAIN_BUTTON_SUBTEXT = UString("Practice Client");
-#define MCOSU_MAIN_BUTTON_BACK_TEXT "by McKay"
+UString OsuMainMenu::MCOSU_MAIN_BUTTON_TEXT = UString("kMcOsu");
+UString OsuMainMenu::MCOSU_MAIN_BUTTON_SUBTEXT = UString("\"Practice\" Client");
+#define MCOSU_MAIN_BUTTON_BACK_TEXT "originally by McKay"
 
 #define MCOSU_NEWVERSION_NOTIFICATION_TRIGGER_FILE "version.txt"
 
@@ -354,7 +354,7 @@ OsuMainMenu::OsuMainMenu(Osu *osu) : OsuScreen(osu)
 	m_steamWorkshopButton->setColor(0xff108fe8);
 	m_steamWorkshopButton->setTextColor(0xffffffff);
 	m_steamWorkshopButton->setVisible(osu_draw_main_menu_workshop_button.getBool());
-	m_container->addBaseUIElement(m_steamWorkshopButton);
+	//m_container->addBaseUIElement(m_steamWorkshopButton);
 
 	m_githubButton = new OsuUIButton(m_osu, 0, 0, 0, 0, "", "Github");
 	m_githubButton->setUseDefaultSkin();
@@ -937,8 +937,28 @@ void OsuMainMenu::draw(Graphics *g)
 			g->pushTransform();
 			{
 				g->scale(fontScale, fontScale);
-				g->translate(m_vCenter.x - m_fCenterOffsetAnim - (titleFont->getStringWidth(MCOSU_MAIN_BUTTON_TEXT)/2.0f)*fontScale, m_vCenter.y + (titleFont->getHeight()*fontScale)/2.25f, -1.0f);
-				g->drawString(titleFont, MCOSU_MAIN_BUTTON_TEXT);
+
+				char temp[2] = {};
+				auto curPos = m_vCenter.x - m_fCenterOffsetAnim - (titleFont->getStringWidth(MCOSU_MAIN_BUTTON_TEXT) / 2.0f) * fontScale;
+				for (int i = 0; i < MCOSU_MAIN_BUTTON_TEXT.length(); i++) {
+					// https://krazydad.com/tutorials/makecolors.php
+					auto time = engine->getTime() * 4;
+					auto freq = 0.3;
+					unsigned red = sin(freq * i + time) * 127 + 128;
+					unsigned green = sin(freq * i + 2 + time) * 127 + 128;
+					unsigned blue = sin(freq * i + 4 + time) * 127 + 128;
+					g->setColor(red << 16 | green << 8 | blue);
+					g->setAlpha((1.0f - m_fMainMenuAnimFriendPercent) * (1.0f - m_fMainMenuAnimFriendPercent) * (1.0f - m_fMainMenuAnimFriendPercent));
+
+					temp[0] = MCOSU_MAIN_BUTTON_TEXT[i];
+					auto str = UString(temp);
+					g->pushTransform();
+					g->translate(curPos, m_vCenter.y + (titleFont->getHeight() * fontScale) / 2.25f, -1.0f);
+					g->drawString(titleFont, str);
+					g->popTransform();
+					auto len = (titleFont->getStringWidth(str)) * fontScale;
+					curPos += len;
+				}
 			}
 			g->popTransform();
 		}

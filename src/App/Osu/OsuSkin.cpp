@@ -309,6 +309,12 @@ OsuSkin::OsuSkin(Osu *osu, UString name, UString filepath, bool isDefaultSkin, b
 	m_bIsRandom = osu_skin_random.getBool();
 	m_bIsRandomElements = osu_skin_random_elements.getBool();
 
+	// dancing cat
+	m_danceFrame0 = m_missingTexture;
+	m_danceFrame1 = m_missingTexture;
+	m_danceFrame2 = m_missingTexture;
+	m_danceFrame3 = m_missingTexture;
+
 	// load all files
 	load();
 
@@ -810,6 +816,13 @@ void OsuSkin::load()
 	checkLoadImage(&m_backgroundCube, "backgroundcube", "OSU_SKIN_FPOSU_BACKGROUNDCUBE", false, "png", true); // force mipmaps
 	randomizeFilePath();
 	checkLoadImage(&m_menuBackground, "menu-background", "OSU_SKIN_MENU_BACKGROUND", false, "jpg");
+
+	// dancing cat
+	randomizeFilePath();
+	checkLoadImage(&m_danceFrame0, "dance-frame-0", "OSU_SKIN_DANCE_FRAME_0");
+	checkLoadImage(&m_danceFrame1, "dance-frame-1", "OSU_SKIN_DANCE_FRAME_1");
+	checkLoadImage(&m_danceFrame2, "dance-frame-2", "OSU_SKIN_DANCE_FRAME_2");
+	checkLoadImage(&m_danceFrame3, "dance-frame-3", "OSU_SKIN_DANCE_FRAME_3");
 
 	// sounds
 

@@ -77,6 +77,13 @@ ConVar osu_songbrowser_search_delay("osu_songbrowser_search_delay", 0.5f, "delay
 ConVar osu_songbrowser_background_star_calculation("osu_songbrowser_background_star_calculation", true, "precalculate stars for all loaded beatmaps while in songbrowser");
 ConVar osu_songbrowser_dynamic_star_recalc("osu_songbrowser_dynamic_star_recalc", true, "dynamically recalculate displayed star value of currently selected beatmap in songbrowser");
 
+// for dancing cat, copied from OsuMainMenu.cpp
+ConVar *OsuSongBrowser2::m_osu_universal_offset_ref = NULL;
+ConVar *OsuSongBrowser2::m_osu_universal_offset_hardcoded_ref = NULL;
+ConVar *OsuSongBrowser2::m_osu_old_beatmap_offset_ref = NULL;
+ConVar *OsuSongBrowser2::m_win_snd_fallback_dsound_ref = NULL;
+ConVar *OsuSongBrowser2::m_osu_universal_offset_hardcoded_fallback_dsound_ref = NULL;
+
 
 
 class OsuSongBrowserBackgroundSearchMatcher : public Resource
@@ -372,6 +379,18 @@ bool OsuSongBrowser2::SortByTitle::operator () (OsuUISongBrowserButton const *a,
 
 OsuSongBrowser2::OsuSongBrowser2(Osu *osu) : OsuScreenBackable(osu)
 {
+	// for dancing cat, copied from OsuMainMenu.cpp
+	if (m_osu_universal_offset_ref == NULL)
+		m_osu_universal_offset_ref = convar->getConVarByName("osu_universal_offset");
+	if (m_osu_universal_offset_hardcoded_ref == NULL)
+		m_osu_universal_offset_hardcoded_ref = convar->getConVarByName("osu_universal_offset_hardcoded");
+	if (m_osu_old_beatmap_offset_ref == NULL)
+		m_osu_old_beatmap_offset_ref = convar->getConVarByName("osu_old_beatmap_offset");
+	if (m_win_snd_fallback_dsound_ref == NULL)
+		m_win_snd_fallback_dsound_ref = convar->getConVarByName("win_snd_fallback_dsound");
+	if (m_osu_universal_offset_hardcoded_fallback_dsound_ref == NULL)
+		m_osu_universal_offset_hardcoded_fallback_dsound_ref = convar->getConVarByName("osu_universal_offset_hardcoded_fallback_dsound");
+
 	m_osu = osu;
 
 	// random selection algorithm init
@@ -915,6 +934,49 @@ void OsuSongBrowser2::draw(Graphics *g)
 		{
 			g->translate((int)(m_bottombar->getPos().x + m_bottombar->getSize().x - font->getStringWidth(busyMessage) - 20), (int)(m_bottombar->getPos().y + m_bottombar->getSize().y/2 - font->getHeight()/2));
 			g->drawString(font, busyMessage);
+		}
+		g->popTransform();
+	}
+
+	// dancing cat
+	// timing point stuff is copied from OsuMainMenu.cpp
+	if (getSelectedBeatmap() != NULL && getSelectedBeatmap()->getSelectedDifficulty2() != NULL && getSelectedBeatmap()->getMusic() != NULL && getSelectedBeatmap()->getMusic()->isPlaying()
+			&& m_osu_universal_offset_ref != NULL && m_osu_universal_offset_hardcoded_ref != NULL && m_win_snd_fallback_dsound_ref != NULL && m_osu_universal_offset_hardcoded_fallback_dsound_ref != NULL && m_osu_old_beatmap_offset_ref != NULL)
+	{
+		const long curMusicPos = (long)getSelectedBeatmap()->getMusic()->getPositionMS()
+			+ (long)m_osu_universal_offset_ref->getInt()
+			+ (long)m_osu_universal_offset_hardcoded_ref->getInt()
+			+ (m_win_snd_fallback_dsound_ref->getBool() ? (long)m_osu_universal_offset_hardcoded_fallback_dsound_ref->getInt() : 0)
+			- getSelectedBeatmap()->getSelectedDifficulty2()->getLocalOffset()
+			- getSelectedBeatmap()->getSelectedDifficulty2()->getOnlineOffset()
+			- (getSelectedBeatmap()->getSelectedDifficulty2()->getVersion() < 5 ? m_osu_old_beatmap_offset_ref->getInt() : 0);
+
+		OsuDatabaseBeatmap::TIMING_INFO t = m_osu->getSelectedBeatmap()->getSelectedDifficulty2()->getTimingInfoForTime(curMusicPos);
+
+		if (t.beatLengthBase == 0.0f) // bah
+			t.beatLengthBase = 1.0f;
+
+		/*
+		McFont *font = engine->getResourceManager()->getFont("FONT_DEFAULT");
+		UString str = UString::format("%f", (float)((curMusicPos - t.offset) % (std::max((long)t.beatLengthBase, (long)1) * 4)) / t.beatLengthBase);
+		//UString str = "wtf";
+		g->setColor(0xFFFFFFFF);
+		g->pushTransform();
+		{
+			g->translate((int)(m_bottombar->getPos().x + m_bottombar->getSize().x/2), (int)(m_bottombar->getPos().y + m_bottombar->getSize().y/2 - font->getHeight()/2));
+			g->drawString(font, str);
+		}
+		g->popTransform();
+		*/
+		// TODO: 3/4 time signature
+		auto progress = std::min(std::max(0.0f, (float)((curMusicPos - t.offset) % (std::max((long)t.beatLengthBase, (long)1) * 4)) / t.beatLengthBase), 3.99f);
+		Image* frames[] = {m_osu->getSkin()->getDanceFrame0(), m_osu->getSkin()->getDanceFrame1(), m_osu->getSkin()->getDanceFrame2(), m_osu->getSkin()->getDanceFrame3()};
+		Image* frame = frames[(int)floor(progress)];
+		g->setColor(0xFFFFFFFF);
+		g->pushTransform();
+		{
+			g->translate((int)(m_bottombar->getPos().x + m_bottombar->getSize().x - frame->getWidth() + 128), (int)(m_bottombar->getPos().y + m_bottombar->getSize().y/2 - frame->getHeight()/2 + 64));
+			g->drawImage(frame);
 		}
 		g->popTransform();
 	}

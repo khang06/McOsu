@@ -1330,8 +1330,10 @@ void OsuDatabase::loadDB(OsuFile *db, bool &fallbackToRawLoad)
 	}
 
 	// hard cap upper db version
+	printf("%d %d %d\n", m_iVersion, osu_database_version.getInt(), osu_database_ignore_version.getBool());
 	if (m_iVersion > osu_database_version.getInt() && !osu_database_ignore_version.getBool())
 	{
+		debugLog("doing fallback load\n");
 		m_osu->getNotificationOverlay()->addNotification(UString::format("osu!.db version unknown (%i),  using fallback loader.", m_iVersion), 0xffffff00, false, 5.0f);
 
 		fallbackToRawLoad = true;
@@ -1339,6 +1341,7 @@ void OsuDatabase::loadDB(OsuFile *db, bool &fallbackToRawLoad)
 
 		return;
 	}
+	debugLog("not doing fallback load\n");
 
 	// read beatmapInfos, and also build two hashmaps (diff hash -> OsuBeatmapDifficulty, diff hash -> OsuBeatmap)
 	struct BeatmapSet

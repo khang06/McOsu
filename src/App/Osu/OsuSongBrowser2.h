@@ -163,6 +163,13 @@ public:
 	inline OsuUISongBrowserInfoLabel *getInfoLabel() {return m_songInfo;}
 
 	inline GROUP getGroupingMode() const {return m_group;}
+private:
+	// for dancing cat, copied from OsuMainMenu.h
+	static ConVar *m_osu_universal_offset_ref;
+	static ConVar *m_osu_universal_offset_hardcoded_ref;
+	static ConVar *m_osu_old_beatmap_offset_ref;
+	static ConVar *m_win_snd_fallback_dsound_ref;
+	static ConVar *m_osu_universal_offset_hardcoded_fallback_dsound_ref;
 
 private:
 	enum class SORT

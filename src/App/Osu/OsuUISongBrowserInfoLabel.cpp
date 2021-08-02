@@ -370,6 +370,7 @@ UString OsuUISongBrowserInfoLabel::buildDiffInfoString()
 	float AR = m_fAR;
 	float OD = m_fOD;
 	float HP = m_fHP;
+	unsigned MC = m_osu->getSongBrowser()->getDynamicStarCalculator()->getMaxPossibleCombo();
 	float stars = m_fStars;
 
 	const float modStars = (float)m_osu->getSongBrowser()->getDynamicStarCalculator()->getTotalStars();
@@ -390,13 +391,13 @@ UString OsuUISongBrowserInfoLabel::buildDiffInfoString()
 
 	UString finalString;
 	if (areStarsInaccurate && m_osu_songbrowser_dynamic_star_recalc_ref->getBool())
-		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g Stars:%.3g *", CS, AR, OD, HP, stars);
+		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g MC:%u Stars:%.3g *", CS, AR, OD, HP, MC, stars);
 	else if (!starsAndModStarsAreEqual && m_osu_songbrowser_dynamic_star_recalc_ref->getBool())
-		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g Stars:%.3g -> %.3g (%ipp)", CS, AR, OD, HP, stars, modStars, (int)(std::round(modPp)));
+		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g MC:%u Stars:%.3g -> %.3g (%ipp)", CS, AR, OD, HP, MC, stars, modStars, (int)(std::round(modPp)));
 	else if (m_osu_songbrowser_dynamic_star_recalc_ref->getBool())
-		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g Stars:%.3g (%ipp)", CS, AR, OD, HP, stars, (int)(std::round(modPp)));
+		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g MC:%u Stars:%.3g (%ipp)", CS, AR, OD, HP, MC, stars, (int)(std::round(modPp)));
 	else
-		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g Stars:%.3g", CS, AR, OD, HP, stars);
+		finalString = UString::format("CS:%.3g AR:%.3g OD:%.3g HP:%.3g MC:%u Stars:%.3g", CS, AR, OD, HP, MC, stars);
 
 	return finalString;
 }

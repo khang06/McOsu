@@ -1437,7 +1437,12 @@ void OsuHUD::drawComboSimple(Graphics *g, int combo, float scale)
 
 void OsuHUD::drawCombo(Graphics *g, int combo)
 {
-	g->setColor(0xffffffff);
+	if (m_osu->getScore()->getNumMisses() > 0)
+		g->setColor(0xFFFF0000);
+	else if (m_osu->getScore()->getNumSliderBreaks() > 0)
+		g->setColor(0xFFFFFF00);
+	else
+		g->setColor(0xFFFFFFFF);
 
 	const int offset = 5;
 
@@ -1482,6 +1487,8 @@ void OsuHUD::drawCombo(Graphics *g, int combo)
 		}
 	}
 	g->popTransform();
+
+	g->setColor(0xFFFFFFFF);
 }
 
 void OsuHUD::drawScore(Graphics *g, unsigned long long score)
@@ -2032,7 +2039,7 @@ void OsuHUD::drawScoreBoardInt(Graphics *g, const std::vector<OsuHUD::SCORE_ENTR
 		{
 			const float scale = (height / scoreFont->getHeight())*scoreScale;
 
-			UString scoreString = UString::format("%llu", scoreEntries[i].score);
+			UString scoreString = UString::format("%'llu", scoreEntries[i].score);
 
 			g->scale(scale, scale);
 			g->translate(x + padding*1.35f, y + height - 2*padding);

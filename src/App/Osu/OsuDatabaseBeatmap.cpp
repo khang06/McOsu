@@ -1932,6 +1932,7 @@ void OsuDatabaseBeatmapStarCalculator::initAsync()
 		m_totalStars = OsuDifficultyCalculator::calculateStarDiffForHitObjects(diffres.diffobjects, m_fCS, &aimStars, &speedStars, -1, &m_aimStrains, &m_speedStrains);
 		m_aimStars = aimStars;
 		m_speedStars = speedStars;
+		printf("total stars %f, aim stars %f, speed stars %f\n", m_totalStars.load(), m_aimStars.load(), m_speedStars.load());
 
 		// NOTE: this matches osu, i.e. it is the time from the start of the music track until the end of the last hitobject (including all breaks and initial skippable sections!)
 		if (diffres.diffobjects.size() > 0)

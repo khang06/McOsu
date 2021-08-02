@@ -33,6 +33,7 @@ public:
 	{
 		long musicPos;
 		int maniaColumn;
+		Vector2 pos;
 	};
 
 public:

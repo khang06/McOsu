@@ -251,14 +251,14 @@ void OsuSpinner::draw(Graphics *g)
 	// draw RPM
 	if (m_iDelta < 0)
 	{
-		McFont *rpmFont = engine->getResourceManager()->getFont("FONT_DEFAULT");
-		const float stringWidth = rpmFont->getStringWidth("RPM: 477");
+		McFont *rpmFont = engine->getResourceManager()->getFont("FONT_OSU_TITLE");
+		const float stringWidth = rpmFont->getStringWidth("477");
 		g->setColor(0xffffffff);
 		g->setAlpha(m_fAlphaWithoutHidden * m_fAlphaWithoutHidden * m_fAlphaWithoutHidden * alphaMultiplier);
 		g->pushTransform();
 		{
 			g->translate((int)(m_beatmap->getOsu()->getScreenWidth()/2 - stringWidth/2), (int)(m_beatmap->getOsu()->getScreenHeight() - 5 + (5 + rpmFont->getHeight())*(1.0f - m_fAlphaWithoutHidden)));
-			g->drawString(rpmFont, UString::format("RPM: %i", (int)(m_fRPM + 0.4f)));
+			g->drawString(rpmFont, UString::format("%i", (int)(m_fRPM + 0.4f)));
 		}
 		g->popTransform();
 	}
