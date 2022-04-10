@@ -2039,7 +2039,7 @@ void OsuHUD::drawScoreBoardInt(Graphics *g, const std::vector<OsuHUD::SCORE_ENTR
 		{
 			const float scale = (height / scoreFont->getHeight())*scoreScale;
 
-			UString scoreString = UString::format("%'llu", scoreEntries[i].score);
+			UString scoreString = UString::format("%llu", scoreEntries[i].score);
 
 			g->scale(scale, scale);
 			g->translate(x + padding*1.35f, y + height - 2*padding);
