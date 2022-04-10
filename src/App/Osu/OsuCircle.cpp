@@ -369,7 +369,8 @@ void OsuCircle::drawHitCircleNumber(Graphics *g, OsuSkin *skin, float numberScal
 			break;
 		}
 
-		g->translate((DigitWidth::getWidth(skin, digits[i])*numberScale + DigitWidth::getWidth(skin, digits[i-1])*numberScale)*0.5f - skin->getHitCircleOverlap()*overlapScale, 0);
+		auto lastDigitWidth = i == 0 ? 0.0 : DigitWidth::getWidth(skin, digits[i - 1]);
+		g->translate((DigitWidth::getWidth(skin, digits[i])*numberScale + lastDigitWidth*numberScale)*0.5f - skin->getHitCircleOverlap()*overlapScale, 0);
 	}
 	g->popTransform();
 }
