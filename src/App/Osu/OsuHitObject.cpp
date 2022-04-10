@@ -32,6 +32,9 @@ ConVar osu_hitresult_fadeout_duration("osu_hitresult_fadeout_duration", 0.600f);
 
 ConVar osu_hitresult_miss_fadein_scale("osu_hitresult_miss_fadein_scale", 2.0f);
 
+ConVar osu_hitresult_miss_visualizer("osu_hitresult_miss_visualizer", false);
+ConVar osu_hitresult_miss_visualizer_duration("osu_hitresult_miss_visualizer_duration", 0.5f, "duration of the miss visualizer in seconds");
+
 ConVar osu_approach_scale_multiplier("osu_approach_scale_multiplier", 3.0f);
 ConVar osu_vr_approach_type("osu_vr_approach_type", 0, "0 = linear (default), 1 = quadratic");
 ConVar osu_vr_draw_approach_circles("osu_vr_draw_approach_circles", false);
@@ -246,6 +249,7 @@ OsuHitObject::OsuHitObject(long time, int sampleType, int comboNumber, bool isEn
 	m_bFinished = false;
 	m_bBlocked = false;
 	m_bMisAim = false;
+	m_vMisAimPos = Vector2();
 	m_iAutopilotDelta = 0;
 	m_bOverrideHDApproachCircle = false;
 	m_bUseFadeInTimeAsApproachTime = false;
@@ -262,6 +266,7 @@ void OsuHitObject::draw2(Graphics *g)
 {
 	drawHitResultAnim(g, m_hitresultanim1);
 	drawHitResultAnim(g, m_hitresultanim2);
+	drawMissVisualizer(g);
 }
 
 void OsuHitObject::drawHitResultAnim(Graphics *g, const HITRESULTANIM &hitresultanim)
@@ -298,6 +303,50 @@ void OsuHitObject::drawHitResultAnim(Graphics *g, const HITRESULTANIM &hitresult
 			else if (beatmapMania != NULL)
 				drawHitResult(g, skin, 200.0f, 150.0f, hitresultanim.rawPos, hitresultanim.result, animPercentInv);
 		}
+	}
+}
+
+void OsuHitObject::drawMissVisualizer(Graphics* g) {
+	if (osu_hitresult_miss_visualizer.getBool() && m_bMisAim && !isSpinner()) {
+		OsuBeatmapStandard* beatmap = dynamic_cast<OsuBeatmapStandard*>(m_beatmap);
+		if (beatmap == nullptr)
+			return;
+
+		const float animPercentInv = 1.0f - ((beatmap->getTime() - (getTime() + OsuGameRules::getHitWindow50(beatmap))) / 1000.0f / osu_hitresult_miss_visualizer_duration.getFloat());
+		if (animPercentInv <= 0.0f)
+			return;
+
+		OsuSkin* skin = beatmap->getSkin();
+
+		auto circlePos = beatmap->osuCoords2Pixels(getRawPosAt(getTime()));
+		if (circlePos.distance(m_vMisAimPos) > beatmap->getHitcircleDiameter())
+			return;
+
+		const float osuCoordScaleMultiplier = beatmap->getHitcircleDiameter() / beatmap->getRawHitcircleDiameter();
+
+		const float animPercent = 1.0 - animPercentInv;
+		const float fadeOutPercent = 0.75;
+		const float alpha = clamp<float>(1.0f - ((animPercent - fadeOutPercent) / (1.0f - fadeOutPercent)), 0.0f, 1.0f);
+
+		// TODO: probably a better way to do this
+		g->setColor(0xffff0000);
+		g->setAlpha(alpha);
+		{
+			// circle
+			auto circlePos = beatmap->osuCoords2Pixels(getRawPosAt(getTime()));
+			skin->getMissVisualizerCircle()->drawRaw(g,
+				circlePos,
+				(beatmap->getRawHitcircleDiameter() / skin->getMissVisualizerCircle()->getSizeBaseRaw().x) * osuCoordScaleMultiplier);
+
+			// line
+			g->drawLine(m_vMisAimPos, circlePos + (m_vMisAimPos - circlePos).normalize() * (beatmap->getHitcircleDiameter() / 2.0 * 0.9));
+
+			// cursor
+			skin->getMissVisualizerCursor()->drawRaw(g,
+				m_vMisAimPos,
+				(beatmap->getRawHitcircleDiameter() / skin->getMissVisualizerCursor()->getSizeBaseRaw().x) * osuCoordScaleMultiplier);
+		}
+		g->setColor(0xffffffff);
 	}
 }
 
@@ -442,6 +491,7 @@ void OsuHitObject::addHitResult(OsuScore::HIT result, long delta, bool isEndOfCo
 void OsuHitObject::onReset(long curPos)
 {
 	m_bMisAim = false;
+	m_vMisAimPos = Vector2();
 	m_iAutopilotDelta = 0;
 
 	m_hitresultanim1.time = -9999.0f;

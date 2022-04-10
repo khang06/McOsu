@@ -342,6 +342,10 @@ public:
 	inline Image *getDanceFrame2() {return m_danceFrame2;}
 	inline Image *getDanceFrame3() {return m_danceFrame3;}
 
+	// miss visualizer
+	inline OsuSkinImage* getMissVisualizerCircle() {return m_missVisualizerCircle;}
+	inline OsuSkinImage* getMissVisualizerCursor() {return m_missVisualizerCursor;}
+
 private:
 	static ConVar *m_osu_skin_ref;
 	static ConVar *m_osu_mod_fposu_ref;
@@ -697,6 +701,10 @@ private:
 	Image *m_danceFrame1;
 	Image *m_danceFrame2;
 	Image *m_danceFrame3;
+
+	// miss visualizer
+	OsuSkinImage* m_missVisualizerCircle;
+	OsuSkinImage* m_missVisualizerCursor;
 };
 
 #endif

@@ -47,7 +47,10 @@ public:
 	virtual bool isCircle() {return false;}
 	virtual bool isSpinner() {return false;}
 	void addHitResult(OsuScore::HIT result, long delta, bool isEndOfCombo, Vector2 posRaw, float targetDelta = 0.0f, float targetAngle = 0.0f, bool ignoreOnHitErrorBar = false, bool ignoreCombo = false, bool ignoreHealth = false, bool addObjectDurationToSkinAnimationTimeStartOffset = true);
-	void misAimed() {m_bMisAim = true;}
+	void misAimed(Vector2 misAimPos) {
+		m_bMisAim = true;
+		m_vMisAimPos = misAimPos;
+	}
 
 	void setIsEndOfCombo(bool isEndOfCombo) {m_bIsEndOfCombo = isEndOfCombo;}
 	void setStack(int stack) {m_iStack = stack;}
@@ -107,6 +110,7 @@ protected:
 	bool m_bBlocked;
 	bool m_bOverrideHDApproachCircle;
 	bool m_bMisAim;
+	Vector2 m_vMisAimPos;
 	long m_iAutopilotDelta;
 	bool m_bUseFadeInTimeAsApproachTime;
 
@@ -123,6 +127,7 @@ private:
 	};
 
 	void drawHitResultAnim(Graphics *g, const HITRESULTANIM &hitresultanim);
+	void drawMissVisualizer(Graphics* g);
 
 	HITRESULTANIM m_hitresultanim1;
 	HITRESULTANIM m_hitresultanim2;

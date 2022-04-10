@@ -844,7 +844,7 @@ void OsuBeatmap::update()
 					if (m_misaimObjects[i]->hasMisAimed()) // only 1 slot per object!
 						continue;
 
-					m_misaimObjects[i]->misAimed();
+					m_misaimObjects[i]->misAimed(m_clicks[c].pos);
 					const long delta = (long)m_clicks[c].musicPos - (long)m_misaimObjects[i]->getTime();
 					m_osu->getHUD()->addHitError(delta, false, true);
 

@@ -827,6 +827,10 @@ void OsuSkin::load()
 	checkLoadImage(&m_danceFrame2, "dance-frame-2", "OSU_SKIN_DANCE_FRAME_2");
 	checkLoadImage(&m_danceFrame3, "dance-frame-3", "OSU_SKIN_DANCE_FRAME_3");
 
+	// miss visualizer
+	m_missVisualizerCircle = createOsuSkinImage("miss-visualizer-circle", Vector2(128, 128), 64, false);
+	m_missVisualizerCursor = createOsuSkinImage("miss-visualizer-cursor", Vector2(128, 128), 64, false);
+
 	// sounds
 
 	// samples
