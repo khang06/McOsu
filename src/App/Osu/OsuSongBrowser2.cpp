@@ -788,7 +788,7 @@ void OsuSongBrowser2::draw(Graphics *g)
 			// draw strain bar graph
 			if (highestAimStrain > 0.0 && highestSpeedStrain > 0.0 && highestStrain > 0.0)
 			{
-				const float dpiScale = Osu::getUIScale();
+				const float dpiScale = Osu::getUIScale(m_osu);
 
 				const float graphWidth = m_scoreBrowser->getSize().x;
 
@@ -2735,7 +2735,7 @@ void OsuSongBrowser2::updateLayout()
 	OsuScreenBackable::updateLayout();
 
 	const float uiScale = Osu::ui_scale->getFloat();
-	const float dpiScale = Osu::getUIScale();
+	const float dpiScale = Osu::getUIScale(m_osu);
 
 	const int margin = 5 * dpiScale;
 
@@ -2876,7 +2876,7 @@ void OsuSongBrowser2::onBack()
 
 void OsuSongBrowser2::updateScoreBrowserLayout()
 {
-	const float dpiScale = Osu::getUIScale();
+	const float dpiScale = Osu::getUIScale(m_osu);
 
 	if (m_osu_scores_enabled->getBool() != m_scoreBrowser->isVisible())
 		m_scoreBrowser->setVisible(m_osu_scores_enabled->getBool());
