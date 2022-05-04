@@ -47,8 +47,9 @@ public:
 	virtual bool isCircle() {return false;}
 	virtual bool isSpinner() {return false;}
 	void addHitResult(OsuScore::HIT result, long delta, bool isEndOfCombo, Vector2 posRaw, float targetDelta = 0.0f, float targetAngle = 0.0f, bool ignoreOnHitErrorBar = false, bool ignoreCombo = false, bool ignoreHealth = false, bool addObjectDurationToSkinAnimationTimeStartOffset = true);
-	void misAimed(Vector2 misAimPos) {
+	void misAimed(Vector2 misAimPos, bool consecutive) {
 		m_bMisAim = true;
+		m_bConsecutiveMisAim = consecutive;
 		m_vMisAimPos = misAimPos;
 	}
 
@@ -58,6 +59,7 @@ public:
 	void setAutopilotDelta(long delta) {m_iAutopilotDelta = delta;}
 	void setBlocked(bool blocked) {m_bBlocked = blocked;}
 	void setComboNumber(int comboNumber) {m_iComboNumber = comboNumber;}
+	void setPrevObject(OsuHitObject* obj) {m_prevObject = obj;}
 
 	virtual Vector2 getRawPosAt(long pos) = 0; // with stack calculation modifications
 	virtual Vector2 getOriginalRawPosAt(long pos) = 0; // without stack calculations
@@ -72,6 +74,7 @@ public:
 	inline int getColorOffset() const {return m_iColorOffset;}
 	inline long getAutopilotDelta() const {return m_iAutopilotDelta;}
 	inline unsigned long long getSortHack() const {return m_iSortHack;}
+	inline OsuHitObject* getPrevObject() const {return m_prevObject;}
 
 	inline bool isVisible() const {return m_bVisible;}
 	inline bool isFinished() const {return m_bFinished;}
@@ -110,9 +113,11 @@ protected:
 	bool m_bBlocked;
 	bool m_bOverrideHDApproachCircle;
 	bool m_bMisAim;
+	bool m_bConsecutiveMisAim;
 	Vector2 m_vMisAimPos;
 	long m_iAutopilotDelta;
 	bool m_bUseFadeInTimeAsApproachTime;
+	OsuHitObject* m_prevObject;
 
 private:
 	static unsigned long long sortHackCounter;

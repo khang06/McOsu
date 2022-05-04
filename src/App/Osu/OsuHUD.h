@@ -217,6 +217,8 @@ private:
 
 	// hit error bar
 	std::vector<HITERROR> m_hiterrors;
+	float m_fFloatingError;
+	float m_fVisibleFloatingError;
 
 	// inputoverlay / key overlay
 	float m_fInputoverlayK1AnimScale;

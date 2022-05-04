@@ -249,10 +249,12 @@ OsuHitObject::OsuHitObject(long time, int sampleType, int comboNumber, bool isEn
 	m_bFinished = false;
 	m_bBlocked = false;
 	m_bMisAim = false;
+	m_bConsecutiveMisAim = false;
 	m_vMisAimPos = Vector2();
 	m_iAutopilotDelta = 0;
 	m_bOverrideHDApproachCircle = false;
 	m_bUseFadeInTimeAsApproachTime = false;
+	m_prevObject = nullptr;
 
 	m_iStack = 0;
 
@@ -326,7 +328,10 @@ void OsuHitObject::drawMissVisualizer(Graphics* g) {
 
 		const float animPercent = 1.0 - animPercentInv;
 		const float fadeOutPercent = 0.75;
-		const float alpha = clamp<float>(1.0f - ((animPercent - fadeOutPercent) / (1.0f - fadeOutPercent)), 0.0f, 1.0f);
+		float alpha = clamp<float>(1.0f - ((animPercent - fadeOutPercent) / (1.0f - fadeOutPercent)), 0.0f, 1.0f);
+
+		if (m_bConsecutiveMisAim)
+			alpha *= 0.1f;
 
 		// TODO: probably a better way to do this
 		g->setColor(0xffff0000);
@@ -491,6 +496,7 @@ void OsuHitObject::addHitResult(OsuScore::HIT result, long delta, bool isEndOfCo
 void OsuHitObject::onReset(long curPos)
 {
 	m_bMisAim = false;
+	m_bConsecutiveMisAim = false;
 	m_vMisAimPos = Vector2();
 	m_iAutopilotDelta = 0;
 

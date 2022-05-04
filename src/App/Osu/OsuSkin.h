@@ -346,6 +346,9 @@ public:
 	inline OsuSkinImage* getMissVisualizerCircle() {return m_missVisualizerCircle;}
 	inline OsuSkinImage* getMissVisualizerCursor() {return m_missVisualizerCursor;}
 
+	// score meter
+	inline OsuSkinImage* getEditorRateArrow() { return m_editorRateArrow; }
+
 private:
 	static ConVar *m_osu_skin_ref;
 	static ConVar *m_osu_mod_fposu_ref;
@@ -705,6 +708,9 @@ private:
 	// miss visualizer
 	OsuSkinImage* m_missVisualizerCircle;
 	OsuSkinImage* m_missVisualizerCursor;
+
+	// score meter
+	OsuSkinImage* m_editorRateArrow;
 };
 
 #endif

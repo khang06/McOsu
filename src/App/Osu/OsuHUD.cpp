@@ -108,6 +108,7 @@ ConVar osu_hud_hiterrorbar_bar_width_scale("osu_hud_hiterrorbar_bar_width_scale"
 ConVar osu_hud_hiterrorbar_bar_height_scale("osu_hud_hiterrorbar_bar_height_scale", 3.4f);
 ConVar osu_hud_hiterrorbar_max_entries("osu_hud_hiterrorbar_max_entries", 32, "maximum number of entries/lines");
 ConVar osu_hud_hiterrorbar_hide_during_spinner("osu_hud_hiterrorbar_hide_during_spinner", true);
+ConVar osu_hud_hiterrorbar_mimic_stable("osu_hud_hiterrorbar_mimic_stable", true);
 ConVar osu_hud_scorebar_scale("osu_hud_scorebar_scale", 1.0f);
 ConVar osu_hud_scorebar_hide_during_breaks("osu_hud_scorebar_hide_during_breaks", true);
 ConVar osu_hud_scorebar_hide_anim_duration("osu_hud_scorebar_hide_anim_duration", 0.5f);
@@ -234,6 +235,9 @@ OsuHUD::OsuHUD(Osu *osu) : OsuScreen(osu)
 	m_fCurFps = 60.0f;
 	m_fCurFpsSmooth = 60.0f;
 	m_fFpsUpdate = 0.0f;
+
+	m_fFloatingError = 0.0f;
+	m_fVisibleFloatingError = 0.0f;
 
 	m_fInputoverlayK1AnimScale = 1.0f;
 	m_fInputoverlayK2AnimScale = 1.0f;
@@ -2235,6 +2239,15 @@ void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100
 			drawHitErrorBarInt(g, hitWindow300, hitWindow100, hitWindow50, hitWindowMiss);
 		}
 		g->popTransform();
+
+		// score meter arrow
+		// this really shouldn't be out here but it's a personal build so idc
+		if (osu_hud_hiterrorbar_mimic_stable.getBool())
+		{
+			auto pos = Vector2(center.x, center.y - (m_osu->getScreenHeight() * osu_hud_hiterrorbar_offset_bottom_percent.getFloat()) - 24.0f);
+			g->setColor(COLOR(255, 255, 255, 255));
+			m_osu->getSkin()->getEditorRateArrow()->draw(g, pos + Vector2(m_fFloatingError * (m_osu->getScreenHeight() / 480.0f), 0), 0.6f);
+		}
 	}
 
 	if (osu_draw_hiterrorbar_top.getBool())
@@ -2289,11 +2302,13 @@ void OsuHUD::drawHitErrorBarInt(Graphics *g, float hitWindow300, float hitWindow
 	Vector2 size = Vector2(m_osu->getScreenWidth()*osu_hud_hiterrorbar_width_percent.getFloat(), m_osu->getScreenHeight()*osu_hud_hiterrorbar_height_percent.getFloat())*osu_hud_scale.getFloat()*osu_hud_hiterrorbar_scale.getFloat();
 	if (osu_hud_hiterrorbar_showmisswindow.getBool())
 		size = Vector2(m_osu->getScreenWidth()*osu_hud_hiterrorbar_width_percent_with_misswindow.getFloat(), m_osu->getScreenHeight()*osu_hud_hiterrorbar_height_percent.getFloat())*osu_hud_scale.getFloat()*osu_hud_hiterrorbar_scale.getFloat();
+	if (osu_hud_hiterrorbar_mimic_stable.getBool())
+		size = Vector2(hitWindow50, 3.0) * (m_osu->getScreenHeight() / 480.0f);
 
 	const Vector2 center = Vector2(0, 0); // NOTE: moved to drawHitErrorBar()
 
-	const float entryHeight = size.y*osu_hud_hiterrorbar_bar_height_scale.getFloat();
-	const float entryWidth = size.y*osu_hud_hiterrorbar_bar_width_scale.getFloat();
+	const float entryHeight = osu_hud_hiterrorbar_mimic_stable.getBool() ? std::round(12.0f * (m_osu->getScreenHeight() / 480.0f)) : size.y*osu_hud_hiterrorbar_bar_height_scale.getFloat();
+	const float entryWidth = osu_hud_hiterrorbar_mimic_stable.getBool() ? std::round(3.0f * (m_osu->getScreenHeight() / 480.0f)) : size.y*osu_hud_hiterrorbar_bar_width_scale.getFloat();
 
 	float totalHitWindowLength = hitWindow50;
 	if (osu_hud_hiterrorbar_showmisswindow.getBool())
@@ -2376,7 +2391,7 @@ void OsuHUD::drawHitErrorBarInt(Graphics *g, float hitWindow300, float hitWindow
 	if (alphaCenterlineInt > 0)
 	{
 		g->setColor(COLOR(alphaCenterlineInt, clamp<int>(osu_hud_hiterrorbar_centerline_r.getInt(), 0, 255), clamp<int>(osu_hud_hiterrorbar_centerline_g.getInt(), 0, 255), clamp<int>(osu_hud_hiterrorbar_centerline_b.getInt(), 0, 255)));
-		g->fillRect(center.x - entryWidth/2.0f/2.0f, center.y - entryHeight/2.0f, entryWidth/2.0f, entryHeight);
+		g->fillRect(center.x - entryWidth/2.0f/2.0f, center.y - entryHeight/2.0f, entryWidth / 2.0f, entryHeight);
 	}
 }
 
@@ -3136,6 +3151,13 @@ void OsuHUD::addHitError(long delta, bool miss, bool misaim)
 
 	if (m_hiterrors.size() > osu_hud_hiterrorbar_max_entries.getInt())
 		m_hiterrors.erase(m_hiterrors.begin());
+
+	if (osu_hud_hiterrorbar_mimic_stable.getBool() && !miss && !misaim) {
+		float hitWindow50 = OsuGameRules::getHitWindow50(m_osu->getSelectedBeatmap());
+		float pos = (float)delta / hitWindow50 * (hitWindow50 / 2);
+		m_fFloatingError = m_fFloatingError * 0.8f + pos * 0.2f;
+		anim->moveQuadOut(&m_fVisibleFloatingError, m_fFloatingError, 800.0f, true);
+	}
 }
 
 void OsuHUD::addTarget(float delta, float angle)
@@ -3352,6 +3374,7 @@ void OsuHUD::selectVolumeNext()
 void OsuHUD::resetHitErrorBar()
 {
 	m_hiterrors.clear();
+	m_fFloatingError = 0.0f;
 }
 
 McRect OsuHUD::getSkipClickRect()

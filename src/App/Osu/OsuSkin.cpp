@@ -831,6 +831,9 @@ void OsuSkin::load()
 	m_missVisualizerCircle = createOsuSkinImage("miss-visualizer-circle", Vector2(128, 128), 64, false);
 	m_missVisualizerCursor = createOsuSkinImage("miss-visualizer-cursor", Vector2(128, 128), 64, false);
 
+	// score meter
+	m_editorRateArrow = createOsuSkinImage("editor-rate-arrow", Vector2(17, 8), 8, false);
+
 	// sounds
 
 	// samples

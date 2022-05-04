@@ -781,8 +781,11 @@ void OsuBeatmap::update()
 							{
 								if (m_iCurMusicPosWithOffsets > m_hitobjects[m]->getTime())
 								{
-									if (m_hitobjects[i]->getTime() > (m_hitobjects[m]->getTime() + m_hitobjects[m]->getDuration())) // NOTE: 2b exception. only force miss if objects are not overlapping.
+									if (m_hitobjects[i]->getTime() > (m_hitobjects[m]->getTime() + m_hitobjects[m]->getDuration())) { // NOTE: 2b exception. only force miss if objects are not overlapping.
+										auto* prevObj = m_hitobjects[m]->getPrevObject();
+										m_hitobjects[m]->misAimed(dynamic_cast<OsuBeatmapStandard*>(this)->getCursorPos(), (prevObj ? prevObj->hasMisAimed() : false) || m_hitobjects[m]->isBlocked());
 										m_hitobjects[m]->miss(m_iCurMusicPosWithOffsets);
+									}
 								}
 							}
 						}
@@ -844,7 +847,8 @@ void OsuBeatmap::update()
 					if (m_misaimObjects[i]->hasMisAimed()) // only 1 slot per object!
 						continue;
 
-					m_misaimObjects[i]->misAimed(m_clicks[c].pos);
+					auto* prevObj = m_misaimObjects[i]->getPrevObject();
+					m_misaimObjects[i]->misAimed(m_clicks[c].pos, (prevObj ? prevObj->hasMisAimed() : false) || m_misaimObjects[i]->isBlocked());
 					const long delta = (long)m_clicks[c].musicPos - (long)m_misaimObjects[i]->getTime();
 					m_osu->getHUD()->addHitError(delta, false, true);
 
@@ -1347,6 +1351,9 @@ bool OsuBeatmap::play()
 		}
 	};
 	std::sort(m_hitobjectsSortedByEndTime.begin(), m_hitobjectsSortedByEndTime.end(), HitObjectSortComparator());
+
+	for (int i = 1; i < m_hitobjects.size(); i++)
+		m_hitobjects[i]->setPrevObject(m_hitobjects[i - 1]);
 
 	onLoad();
 
