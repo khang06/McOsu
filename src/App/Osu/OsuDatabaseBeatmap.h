@@ -171,7 +171,7 @@ public:
 	inline const UString &getAudioFileName() const {return m_sAudioFileName;}
 
 	inline unsigned long getLengthMS() const {return m_iLengthMS;}
-	inline unsigned long getPreviewTime() const {return m_iPreviewTime;}
+	inline int getPreviewTime() const {return m_iPreviewTime;}
 
 	inline float getAR() const {return m_fAR;}
 	inline float getCS() const {return m_fCS;}
@@ -235,7 +235,7 @@ private:
 	UString m_sAudioFileName;
 
 	unsigned long m_iLengthMS;
-	unsigned long m_iPreviewTime;
+	int m_iPreviewTime;
 
 	float m_fAR;
 	float m_fCS;
@@ -365,7 +365,7 @@ private:
 
 
 	static PRIMITIVE_CONTAINER loadPrimitiveObjects(const UString &osuFilePath, Osu::GAMEMODE gameMode, bool filePathIsInMemoryBeatmap = false);
-	static void calculateSliderTimesClicksTicks(std::vector<SLIDER> &sliders, std::vector<TIMINGPOINT> &timingpoints, float sliderMultiplier, float sliderTickRate);
+	static void calculateSliderTimesClicksTicks(int beatmapVersion, std::vector<SLIDER> &sliders, std::vector<TIMINGPOINT> &timingpoints, float sliderMultiplier, float sliderTickRate);
 
 
 

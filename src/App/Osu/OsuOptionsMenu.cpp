@@ -89,9 +89,9 @@ public:
 			approachAlpha = 1.0f;
 
 			OsuCircle::drawCircle(g, m_osu->getSkin(), m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(1.0f/5.0f), 0.0f), hitcircleDiameter, numberScale, overlapScale, 1, 42, 0, approachScale, approachAlpha, approachAlpha, true, false);
-			OsuCircle::drawHitResult(g, m_osu->getSkin(), hitcircleDiameter, hitcircleDiameter, m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(2.0f/5.0f), 0.0f), OsuScore::HIT::HIT_100, 0.45f);
-			OsuCircle::drawHitResult(g, m_osu->getSkin(), hitcircleDiameter, hitcircleDiameter, m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(3.0f/5.0f), 0.0f), OsuScore::HIT::HIT_50, 0.45f);
-			OsuCircle::drawHitResult(g, m_osu->getSkin(), hitcircleDiameter, hitcircleDiameter, m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(4.0f/5.0f), 0.0f), OsuScore::HIT::HIT_MISS, 0.45f);
+			OsuCircle::drawHitResult(g, m_osu->getSkin(), hitcircleDiameter, hitcircleDiameter, m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(2.0f/5.0f), 0.0f), OsuScore::HIT::HIT_100, 0.45f, 0.33f);
+			OsuCircle::drawHitResult(g, m_osu->getSkin(), hitcircleDiameter, hitcircleDiameter, m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(3.0f/5.0f), 0.0f), OsuScore::HIT::HIT_50, 0.45f, 0.66f);
+			OsuCircle::drawHitResult(g, m_osu->getSkin(), hitcircleDiameter, hitcircleDiameter, m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(4.0f/5.0f), 0.0f), OsuScore::HIT::HIT_MISS, 0.45f, 1.0f);
 			OsuCircle::drawApproachCircle(g, m_osu->getSkin(), m_vPos + Vector2(0, m_vSize.y/2) + Vector2(m_vSize.x*(1.0f/5.0f), 0.0f), m_osu->getSkin()->getComboColorForCounter(42, 0), hitcircleDiameter, approachScale, approachCircleAlpha, false, false);
 		}
 		else if (m_iMode == 1)
@@ -429,6 +429,7 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	m_bWASAPIPeriodChangeScheduled = false;
 
 	m_iNumResetAllKeyBindingsPressed = 0;
+	m_iNumResetEverythingPressed = 0;
 
 	m_iManiaK = 0;
 	m_iManiaKey = 0;
@@ -715,10 +716,18 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 #endif
 
 	addSubSection("Volume");
-	addSlider("Master:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_master"), 70.0f)->setKeyDelta(0.01f);
-	addSlider("Inactive:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_master_inactive"), 70.0f)->setKeyDelta(0.01f);
-	addSlider("Music:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_music"), 70.0f)->setKeyDelta(0.01f);
-	addSlider("Effects:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_effects"), 70.0f)->setKeyDelta(0.01f);
+	CBaseUISlider *masterVolumeSlider = addSlider("Master:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_master"), 70.0f);
+	masterVolumeSlider->setChangeCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onSliderChangePercent) );
+	masterVolumeSlider->setKeyDelta(0.01f);
+	CBaseUISlider *inactiveVolumeSlider = addSlider("Inactive:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_master_inactive"), 70.0f);
+	inactiveVolumeSlider->setChangeCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onSliderChangePercent) );
+	inactiveVolumeSlider->setKeyDelta(0.01f);
+	CBaseUISlider *musicVolumeSlider = addSlider("Music:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_music"), 70.0f);
+	musicVolumeSlider->setChangeCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onSliderChangePercent) );
+	musicVolumeSlider->setKeyDelta(0.01f);
+	CBaseUISlider *effectsVolumeSlider = addSlider("Effects:", 0.0f, 1.0f, convar->getConVarByName("osu_volume_effects"), 70.0f);
+	effectsVolumeSlider->setChangeCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onSliderChangePercent) );
+	effectsVolumeSlider->setKeyDelta(0.01f);
 
 	addCheckbox("Play miss sound when not hitting 300s", "Plays tooslow.wav or toofast.wav when too slow or too fast.", convar->getConVarByName("osu_pitch_hitsounds_when_not_300"));
 
@@ -775,15 +784,15 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	hitResultScaleSlider->setChangeCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onSliderChangePercent) );
 	hitResultScaleSlider->setKeyDelta(0.01f);
 	addCheckbox("Draw Numbers", convar->getConVarByName("osu_draw_numbers"));
-	addCheckbox("Draw ApproachCircles", convar->getConVarByName("osu_draw_approach_circles"));
+	addCheckbox("Draw Approach Circles", convar->getConVarByName("osu_draw_approach_circles"));
 	addSpacer();
 	addCheckbox("Ignore Beatmap Sample Volume", "Ignore beatmap timingpoint effect volumes.\nQuiet hitsounds can destroy accuracy and concentration, enabling this will fix that.", convar->getConVarByName("osu_ignore_beatmap_sample_volume"));
 	addCheckbox("Ignore Beatmap Combo Colors", convar->getConVarByName("osu_ignore_beatmap_combo_colors"));
 	addCheckbox("Use skin's sound samples", "If this is not selected, then the default skin hitsounds will be used.", convar->getConVarByName("osu_skin_use_skin_hitsounds"));
 	addCheckbox("Load HD @2x", "On very low resolutions (below 1600x900) you can disable this to get smoother visuals.", convar->getConVarByName("osu_skin_hd"));
 	addSpacer();
-	addCheckbox("Draw CursorTrail", convar->getConVarByName("osu_draw_cursor_trail"));
-	addCheckbox("Force Smooth CursorTrail", "Usually, the presence of the cursormiddle.png skin image enables smooth cursortrails.\nThis option allows you to force enable smooth cursortrails for all skins.", convar->getConVarByName("osu_cursor_trail_smooth_force"));
+	addCheckbox("Draw Cursor Trail", convar->getConVarByName("osu_draw_cursor_trail"));
+	addCheckbox("Force Smooth Cursor Trail", "Usually, the presence of the cursormiddle.png skin image enables smooth cursortrails.\nThis option allows you to force enable smooth cursortrails for all skins.", convar->getConVarByName("osu_cursor_trail_smooth_force"));
 	m_cursorSizeSlider = addSlider("Cursor Size:", 0.01f, 5.0f, convar->getConVarByName("osu_cursor_scale"), -1.0f, true);
 	m_cursorSizeSlider->setAnimated(false);
 	m_cursorSizeSlider->setKeyDelta(0.01f);
@@ -798,13 +807,13 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	addCheckbox("Use osu!lazer Slider Style", "Only really looks good if your skin doesn't \"SliderTrackOverride\" too dark.", convar->getConVarByName("osu_slider_osu_next_style"));
 	addCheckbox("Use combo color as tint for slider ball", convar->getConVarByName("osu_slider_ball_tint_combo_color"));
 	addCheckbox("Use combo color as tint for slider border", convar->getConVarByName("osu_slider_border_tint_combo_color"));
-	addCheckbox("Draw SliderEndCircle", convar->getConVarByName("osu_slider_draw_endcircle"));
+	addCheckbox("Draw Slider End Circle", convar->getConVarByName("osu_slider_draw_endcircle"));
 
 	//**************************************************************************************************************************//
 
 	CBaseUIElement *sectionInput = addSection("Input");
 
-	addSubSection("Mouse");
+	addSubSection("Mouse", "scroll");
 	if (env->getOS() == Environment::OS::OS_WINDOWS || env->getOS() == Environment::OS::OS_MACOS || env->getOS() == Environment::OS::OS_HORIZON)
 	{
 		addSlider("Sensitivity:", (env->getOS() == Environment::OS::OS_HORIZON ? 1.0f : 0.1f), 6.0f, convar->getConVarByName("mouse_sensitivity"))->setKeyDelta(0.01f);
@@ -863,6 +872,9 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	addSpacer();
 	const UString keyboardSectionTags = "keyboard keys key bindings binds keybinds keybindings";
 	CBaseUIElement *subSectionKeyboard = addSubSection("Keyboard", keyboardSectionTags);
+	OsuUIButton *resetAllKeyBindingsButton = addButton("Reset all key bindings");
+	resetAllKeyBindingsButton->setColor(0xffff0000);
+	resetAllKeyBindingsButton->setClickCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onKeyBindingsResetAllPressed) );
 	addSubSection("Keys - osu! Standard Mode", keyboardSectionTags);
 	addKeyBindButton("Left Click", &OsuKeyBindings::LEFT_CLICK);
 	addKeyBindButton("Right Click", &OsuKeyBindings::RIGHT_CLICK);
@@ -876,6 +888,8 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	addKeyBindButton("Skip Cutscene", &OsuKeyBindings::SKIP_CUTSCENE);
 	addKeyBindButton("Toggle Scoreboard", &OsuKeyBindings::TOGGLE_SCOREBOARD);
 	addKeyBindButton("Scrubbing (+ Click Drag!)", &OsuKeyBindings::SEEK_TIME);
+	addKeyBindButton("Quick Seek -5sec <<<", &OsuKeyBindings::SEEK_TIME_BACKWARD);
+	addKeyBindButton("Quick Seek +5sec >>>", &OsuKeyBindings::SEEK_TIME_FORWARD);
 	addKeyBindButton("Increase Local Song Offset", &OsuKeyBindings::INCREASE_LOCAL_OFFSET);
 	addKeyBindButton("Decrease Local Song Offset", &OsuKeyBindings::DECREASE_LOCAL_OFFSET);
 	addKeyBindButton("Quick Retry (hold briefly)", &OsuKeyBindings::QUICK_RETRY);
@@ -904,10 +918,6 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	addKeyBindButton("Spunout", &OsuKeyBindings::MOD_SPUNOUT);
 	addKeyBindButton("Auto", &OsuKeyBindings::MOD_AUTO);
 	addKeyBindButton("Score V2", &OsuKeyBindings::MOD_SCOREV2);
-	addSpacer();
-	OsuUIButton *resetAllKeyBindingsButton = addButton("Reset all key bindings");
-	resetAllKeyBindingsButton->setColor(0xffff0000);
-	resetAllKeyBindingsButton->setClickCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onKeyBindingsResetAllPressed) );
 	///addButton("osu!mania layout")->setClickCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onKeyBindingManiaPressed) );
 
 	//**************************************************************************************************************************//
@@ -1118,6 +1128,17 @@ OsuOptionsMenu::OsuOptionsMenu(Osu *osu) : OsuScreenBackable(osu)
 	addCheckbox("SliderBreak Epilepsy", convar->getConVarByName("osu_slider_break_epilepsy"));
 	addCheckbox("Invisible Cursor", convar->getConVarByName("osu_hide_cursor_during_gameplay"));
 	addCheckbox("Draw 300s", convar->getConVarByName("osu_hitresult_draw_300s"));
+
+	addSection("Maintenance");
+	addSubSection("Restore");
+	OsuUIButton *resetAllSettingsButton = addButton("Reset all settings");
+	resetAllSettingsButton->setClickCallback( fastdelegate::MakeDelegate(this, &OsuOptionsMenu::onResetEverythingClicked) );
+	resetAllSettingsButton->setColor(0xffff0000);
+	addSpacer();
+	addSpacer();
+	addSpacer();
+	addSpacer();
+	addSpacer();
 	addSpacer();
 	addSpacer();
 	addSpacer();
@@ -1495,7 +1516,6 @@ void OsuOptionsMenu::onKeyDown(KeyboardEvent &e)
 				if (engine->getKeyboard()->isControlDown())
 				{
 					// delete everything from the current caret position to the left, until after the first non-space character (but including it)
-					// TODO: use a CBaseUITextbox instead for the search box
 					bool foundNonSpaceChar = false;
 					while (m_sSearchString.length() > 0)
 					{
@@ -1670,13 +1690,16 @@ void OsuOptionsMenu::setVisibleInt(bool visible, bool fromOnBack)
 		//m_fAnimation = 0.0f;
 	}
 
-	// auto scroll to fposu settings if opening options while in fposu gamemode
+	// usability: auto scroll to fposu settings if opening options while in fposu gamemode
 	if (visible && m_osu->isInPlayMode() && m_osu_mod_fposu_ref->getBool() && !m_fposuCategoryButton->isActiveCategory())
 		onCategoryClicked(m_fposuCategoryButton);
 
-	// reset key bind reset counter
+	// reset reset counters
 	if (visible)
+	{
 		m_iNumResetAllKeyBindingsPressed = 0;
+		m_iNumResetEverythingPressed = 0;
+	}
 }
 
 void OsuOptionsMenu::setUsername(UString username)
@@ -1746,6 +1769,12 @@ void OsuOptionsMenu::updateLayout()
 				if (m_elements[i].elements.size() == 1)
 				{
 					CBaseUITextbox *textboxPointer = dynamic_cast<CBaseUITextbox*>(m_elements[i].elements[0]);
+					if (textboxPointer != NULL)
+						textboxPointer->setText(m_elements[i].cvar->getString());
+				}
+				else if (m_elements[i].elements.size() == 2)
+				{
+					CBaseUITextbox *textboxPointer = dynamic_cast<CBaseUITextbox*>(m_elements[i].elements[1]);
 					if (textboxPointer != NULL)
 						textboxPointer->setText(m_elements[i].cvar->getString());
 				}
@@ -2156,6 +2185,8 @@ void OsuOptionsMenu::updateLayout()
 	m_options->getContainer()->addBaseUIElement(m_spacer);
 
 	m_options->setScrollSizeToContent();
+	if (!enableHorizontalScrolling)
+		m_options->scrollToLeft();
 	m_options->setHorizontalScrolling(enableHorizontalScrolling);
 
 	m_options->getContainer()->addBaseUIElement(m_contextMenu);
@@ -2685,12 +2716,24 @@ void OsuOptionsMenu::onOutputDeviceSelect()
 
 void OsuOptionsMenu::onOutputDeviceSelect2(UString outputDeviceName, int id)
 {
+	unsigned long prevMusicPositionMS = 0;
+	if (!m_osu->isInPlayMode() && m_osu->getSelectedBeatmap() != NULL && m_osu->getSelectedBeatmap()->getMusic() != NULL)
+		prevMusicPositionMS = m_osu->getSelectedBeatmap()->getMusic()->getPositionMS();
+
 	engine->getSound()->setOutputDevice(outputDeviceName);
 	m_outputDeviceLabel->setText(engine->getSound()->getOutputDevice());
 	m_osu->getSkin()->reloadSounds();
 
 	// and update reset button as usual
 	onOutputDeviceResetUpdate();
+
+	// start playing music again after audio device changed
+	if (!m_osu->isInPlayMode() && m_osu->getSelectedBeatmap() != NULL && m_osu->getSelectedBeatmap()->getMusic() != NULL)
+	{
+		m_osu->getSelectedBeatmap()->unloadMusic();
+		m_osu->getSelectedBeatmap()->select(); // (triggers preview music play)
+		m_osu->getSelectedBeatmap()->getMusic()->setPositionMS(prevMusicPositionMS);
+	}
 }
 
 void OsuOptionsMenu::onOutputDeviceResetClicked()
@@ -2713,7 +2756,7 @@ void OsuOptionsMenu::onOutputDeviceRestart()
 
 #else
 
-	engine->getSound()->setOutputDevice("Default"); // TODO: horizon fallback?
+	engine->getSound()->setOutputDevice("Default"); // NOTE: only relevant for horizon builds atm
 
 #endif
 }
@@ -3463,6 +3506,42 @@ void OsuOptionsMenu::onResetClicked(CBaseUIButton *button)
 	}
 
 	onResetUpdate(button);
+}
+
+void OsuOptionsMenu::onResetEverythingClicked(CBaseUIButton *button)
+{
+	m_iNumResetEverythingPressed++;
+
+	const int numRequiredPressesUntilReset = 4;
+	const int remainingUntilReset = numRequiredPressesUntilReset - m_iNumResetEverythingPressed;
+
+	if (m_iNumResetEverythingPressed > (numRequiredPressesUntilReset-1))
+	{
+		m_iNumResetEverythingPressed = 0;
+
+		// first reset all settings
+		for (size_t i=0; i<m_elements.size(); i++)
+		{
+			OsuOptionsMenuResetButton *resetButton = m_elements[i].resetButton;
+			if (resetButton != NULL && resetButton->isEnabled())
+				resetButton->click();
+		}
+
+		// and then all key bindings (since these don't use the yellow reset button system)
+		for (ConVar *bind : OsuKeyBindings::ALL)
+		{
+			bind->setValue(bind->getDefaultFloat());
+		}
+
+		m_osu->getNotificationOverlay()->addNotification("All settings have been reset.", 0xff00ff00);
+	}
+	else
+	{
+		if (remainingUntilReset > 1)
+			m_osu->getNotificationOverlay()->addNotification(UString::format("Press %i more times to confirm.", remainingUntilReset));
+		else
+			m_osu->getNotificationOverlay()->addNotification(UString::format("Press %i more time to confirm!", remainingUntilReset), 0xffffff00);
+	}
 }
 
 void OsuOptionsMenu::addSpacer()

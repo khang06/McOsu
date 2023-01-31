@@ -10,9 +10,9 @@
 #include "Engine.h"
 #include "ConVar.h"
 #include "File.h"
-#include "MD5.h"
 
 #include "Osu.h"
+#include "OsuFile.h"
 #include "OsuSkin.h"
 #include "OsuBeatmap.h"
 #include "OsuBeatmapStandard.h"
@@ -39,6 +39,7 @@ ConVar osu_mod_random_spinner_offset_x_percent("osu_mod_random_spinner_offset_x_
 ConVar osu_mod_random_spinner_offset_y_percent("osu_mod_random_spinner_offset_y_percent", 1.0f, "how much the randomness affects things");
 ConVar osu_mod_reverse_sliders("osu_mod_reverse_sliders", false);
 ConVar osu_mod_strict_tracking("osu_mod_strict_tracking", false);
+ConVar osu_mod_strict_tracking_remove_slider_ticks("osu_mod_strict_tracking_remove_slider_ticks", false, "whether the strict tracking mod should remove slider ticks or not, this changed after its initial implementation in lazer");
 
 ConVar osu_show_approach_circle_on_first_hidden_object("osu_show_approach_circle_on_first_hidden_object", true);
 
@@ -48,6 +49,8 @@ ConVar osu_slider_max_repeat("osu_slider_max_repeat", 9000, "maximum number of r
 
 ConVar osu_number_max("osu_number_max", 0, "0 = disabled, 1/2/3/4/etc. limits visual circle numbers to this number");
 ConVar osu_ignore_beatmap_combo_numbers("osu_ignore_beatmap_combo_numbers", false, "may be used in conjunction with osu_number_max");
+
+ConVar osu_beatmap_version("osu_beatmap_version", 14, "maximum supported .osu file version, above this will simply not load");
 
 unsigned long long OsuDatabaseBeatmap::sortHackCounter = 0;
 
@@ -86,13 +89,13 @@ OsuDatabaseBeatmap::OsuDatabaseBeatmap(Osu *osu, UString filePath, UString folde
 
 	// raw metadata (note the special default values)
 
-	m_iVersion = 14;
+	m_iVersion = osu_beatmap_version.getInt();
 	m_iGameMode = 0;
 	m_iID = 0;
 	m_iSetID = -1;
 
 	m_iLengthMS = 0;
-	m_iPreviewTime = 0;
+	m_iPreviewTime = -1;
 
 	m_fAR = 5.0f;
 	m_fCS = 5.0f;
@@ -522,7 +525,7 @@ OsuDatabaseBeatmap::PRIMITIVE_CONTAINER OsuDatabaseBeatmap::loadPrimitiveObjects
 	return c;
 }
 
-void OsuDatabaseBeatmap::calculateSliderTimesClicksTicks(std::vector<SLIDER> &sliders, std::vector<TIMINGPOINT> &timingpoints, float sliderMultiplier, float sliderTickRate)
+void OsuDatabaseBeatmap::calculateSliderTimesClicksTicks(int beatmapVersion, std::vector<SLIDER> &sliders, std::vector<TIMINGPOINT> &timingpoints, float sliderMultiplier, float sliderTickRate)
 {
 	if (timingpoints.size() > 0)
 	{
@@ -572,10 +575,9 @@ void OsuDatabaseBeatmap::calculateSliderTimesClicksTicks(std::vector<SLIDER> &sl
 			s.sliderTime = s.sliderTimeWithoutRepeats * s.repeat;
 
 			// calculate ticks
-			// TODO: validate https://github.com/ppy/osu/pull/3595/files
 			{
 				const float minTickPixelDistanceFromEnd = 0.01f * SliderHelper::getSliderVelocity(s, timingInfo, sliderMultiplier, sliderTickRate);
-				const float tickPixelLength = SliderHelper::getSliderTickDistance(sliderMultiplier, sliderTickRate) / SliderHelper::getTimingPointMultiplierForSlider(s, timingInfo);
+				const float tickPixelLength = (beatmapVersion < 8 ? SliderHelper::getSliderTickDistance(sliderMultiplier, sliderTickRate) : SliderHelper::getSliderTickDistance(sliderMultiplier, sliderTickRate) / SliderHelper::getTimingPointMultiplierForSlider(s, timingInfo));
 				const float tickDurationPercentOfSliderLength = tickPixelLength / (s.pixelLength == 0.0f ? 1.0f : s.pixelLength);
 				const int tickCount = std::min((int)std::ceil(s.pixelLength / tickPixelLength) - 1, 65536/2); // NOTE: hard sanity limit number of ticks per slider
 
@@ -650,7 +652,7 @@ OsuDatabaseBeatmap::LOAD_DIFFOBJ_RESULT OsuDatabaseBeatmap::loadDifficultyHitObj
 	}
 
 	// calculate sliderTimes, and build slider clicks and ticks
-	calculateSliderTimesClicksTicks(c.sliders, c.timingpoints, c.sliderMultiplier, c.sliderTickRate);
+	calculateSliderTimesClicksTicks(c.version, c.sliders, c.timingpoints, c.sliderMultiplier, c.sliderTickRate);
 
 	// now we can calculate the max possible combo (because that needs ticks/clicks to be filled, mostly convenience)
 	{
@@ -934,29 +936,8 @@ bool OsuDatabaseBeatmap::loadMetadata(OsuDatabaseBeatmap *databaseBeatmap)
 			}
 		}
 
-		if (beatmapFile != NULL && beatmapFileSize > 0)
-		{
-			const char *hexDigits = "0123456789abcdef";
-			const unsigned char *input = (unsigned char*)beatmapFile;
-
-			MD5 hasher;
-			hasher.update(input, beatmapFileSize);
-			hasher.finalize();
-
-			const unsigned char *rawMD5Hash = hasher.getDigest();
-
-			for (int i=0; i<16; i++)
-			{
-				const size_t index1 = (rawMD5Hash[i] >> 4) & 0xf;	// md5hash[i] / 16
-				const size_t index2 = (rawMD5Hash[i] & 0xf);		// md5hash[i] % 16
-
-				if (index1 > 15 || index2 > 15)
-					continue;
-
-				databaseBeatmap->m_sMD5Hash += hexDigits[index1];
-				databaseBeatmap->m_sMD5Hash += hexDigits[index2];
-			}
-		}
+		if (beatmapFile != NULL)
+			databaseBeatmap->m_sMD5Hash = OsuFile::md5((unsigned char*)beatmapFile, beatmapFileSize);
 	}
 
 	// open osu file again, but this time for parsing
@@ -1011,7 +992,14 @@ bool OsuDatabaseBeatmap::loadMetadata(OsuDatabaseBeatmap *databaseBeatmap)
 				{
 				case -1: // header (e.g. "osu file format v12")
 					{
-						sscanf(curLineChar, " osu file format v %i \n", &databaseBeatmap->m_iVersion);
+						if (sscanf(curLineChar, " osu file format v %i \n", &databaseBeatmap->m_iVersion) == 1)
+						{
+							if (databaseBeatmap->m_iVersion > osu_beatmap_version.getInt())
+							{
+								debugLog("Ignoring unknown/invalid beatmap version %i\n", databaseBeatmap->m_iVersion);
+								return false;
+							}
+						}
 					}
 					break;
 
@@ -1025,7 +1013,7 @@ bool OsuDatabaseBeatmap::loadMetadata(OsuDatabaseBeatmap *databaseBeatmap)
 						}
 
 						sscanf(curLineChar, " StackLeniency : %f \n", &databaseBeatmap->m_fStackLeniency);
-						sscanf(curLineChar, " PreviewTime : %lu \n", &databaseBeatmap->m_iPreviewTime);
+						sscanf(curLineChar, " PreviewTime : %i \n", &databaseBeatmap->m_iPreviewTime);
 						sscanf(curLineChar, " Mode : %i \n", &databaseBeatmap->m_iGameMode);
 					}
 					break;
@@ -1368,7 +1356,7 @@ OsuDatabaseBeatmap::LOAD_GAMEPLAY_RESULT OsuDatabaseBeatmap::loadGameplay(OsuDat
 	}
 
 	// calculate sliderTimes, and build slider clicks and ticks
-	calculateSliderTimesClicksTicks(c.sliders, databaseBeatmap->m_timingpoints, databaseBeatmap->m_fSliderMultiplier, databaseBeatmap->m_fSliderTickRate);
+	calculateSliderTimesClicksTicks(c.version, c.sliders, databaseBeatmap->m_timingpoints, databaseBeatmap->m_fSliderMultiplier, databaseBeatmap->m_fSliderTickRate);
 
 	// build hitobjects from the primitive data we loaded from the osu file
 	OsuBeatmapStandard *beatmapStandard = dynamic_cast<OsuBeatmapStandard*>(beatmap);
@@ -1438,7 +1426,7 @@ OsuDatabaseBeatmap::LOAD_GAMEPLAY_RESULT OsuDatabaseBeatmap::loadGameplay(OsuDat
 			{
 				SLIDER &s = c.sliders[i];
 
-				if (osu_mod_strict_tracking.getBool())
+				if (osu_mod_strict_tracking.getBool() && osu_mod_strict_tracking_remove_slider_ticks.getBool())
 					s.ticks.clear();
 
 				if (osu_mod_random.getBool())

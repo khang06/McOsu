@@ -231,26 +231,27 @@ OsuModSelector::OsuModSelector(Osu *osu) : OsuScreen(osu)
 	addExperimentalCheckbox("FPoSu: Strafing", "Playfield moves in 3D space (see fposu_mod_strafing_...).\nOnly works in FPoSu mode!", convar->getConVarByName("fposu_mod_strafing"));
 	addExperimentalCheckbox("Wobble", "Playfield rotates and moves.", convar->getConVarByName("osu_mod_wobble"));
 	addExperimentalCheckbox("AR Wobble", "Approach rate oscillates between -1 and +1.", convar->getConVarByName("osu_mod_arwobble"));
+	addExperimentalCheckbox("Approach Different", "Customize the approach circle animation.\nSee osu_mod_approach_different_style.\nSee osu_mod_approach_different_initial_size.", convar->getConVarByName("osu_mod_approach_different"));
 
 	if (env->getOS() != Environment::OS::OS_HORIZON)
 		addExperimentalCheckbox("Timewarp", "Speed increases from 100% to 150% over the course of the beatmap.", convar->getConVarByName("osu_mod_timewarp"));
 
 	addExperimentalCheckbox("AR Timewarp", "Approach rate decreases from 100% to 50% over the course of the beatmap.", convar->getConVarByName("osu_mod_artimewarp"));
-	addExperimentalCheckbox("Approach Different", "Customize the approach circle animation.\nSee osu_mod_approach_different_style.\nSee osu_mod_approach_different_initial_size.", convar->getConVarByName("osu_mod_approach_different"));
 	addExperimentalCheckbox("Minimize", "Circle size decreases from 100% to 50% over the course of the beatmap.", convar->getConVarByName("osu_mod_minimize"));
 	addExperimentalCheckbox("Fading Cursor", "The cursor fades the higher the combo, becoming invisible at 50.", convar->getConVarByName("osu_mod_fadingcursor"));
 	addExperimentalCheckbox("First Person", "Centered cursor.", convar->getConVarByName("osu_mod_fps"));
+	addExperimentalCheckbox("Full Alternate", "You can never use the same key twice in a row.", convar->getConVarByName("osu_mod_fullalternate"));
 	addExperimentalCheckbox("Jigsaw 1", "Unnecessary clicks count as misses.", convar->getConVarByName("osu_mod_jigsaw1"));
 	addExperimentalCheckbox("Jigsaw 2", "Massively reduced slider follow circle radius.", convar->getConVarByName("osu_mod_jigsaw2"));
-	addExperimentalCheckbox("Full Alternate", "You can never use the same key twice in a row.", convar->getConVarByName("osu_mod_fullalternate"));
 	addExperimentalCheckbox("Random", "Randomizes hitobject positions. (VERY experimental!)", convar->getConVarByName("osu_mod_random"));
 	addExperimentalCheckbox("Reverse Sliders", "Reverses the direction of all sliders. (Reload beatmap to apply!)", convar->getConVarByName("osu_mod_reverse_sliders"));
 	addExperimentalCheckbox("No 50s", "Only 300s or 100s. Try harder.", convar->getConVarByName("osu_mod_no50s"));
 	addExperimentalCheckbox("No 100s no 50s", "300 or miss. PF \"lite\"", convar->getConVarByName("osu_mod_no100s"));
 	addExperimentalCheckbox("MinG3012", "No 100s. Only 300s or 50s. Git gud.", convar->getConVarByName("osu_mod_ming3012"));
+	addExperimentalCheckbox("Half Timing Window", "The hit timing window is cut in half. Hit early or perfect (300).", convar->getConVarByName("osu_mod_halfwindow"));
 	addExperimentalCheckbox("MillhioreF", "Go below AR 0. Doubled approach time.", convar->getConVarByName("osu_mod_millhioref"));
 	addExperimentalCheckbox("Mafham", "Approach rate is set to negative infinity. See the entire beatmap at once.\nUses very aggressive optimizations to keep the framerate high, you have been warned!", convar->getConVarByName("osu_mod_mafham"));
-	addExperimentalCheckbox("Strict Tracking", "Leaving sliders in any way counts as a miss and combo break.\nSlider ticks are removed. (Reload beatmap to apply!)", convar->getConVarByName("osu_mod_strict_tracking"));
+	addExperimentalCheckbox("Strict Tracking", "Leaving sliders in any way counts as a miss and combo break. (Reload beatmap to apply!)", convar->getConVarByName("osu_mod_strict_tracking"));
 	addExperimentalCheckbox("Flip Up/Down", "Playfield is flipped upside down (mirrored at horizontal axis).", convar->getConVarByName("osu_playfield_mirror_horizontal"));
 	addExperimentalCheckbox("Flip Left/Right", "Playfield is flipped left/right (mirrored at vertical axis).", convar->getConVarByName("osu_playfield_mirror_vertical"));
 
@@ -1128,15 +1129,22 @@ void OsuModSelector::resetMods()
 	for (int i=0; i<m_overrideSliders.size(); i++)
 	{
 		// HACKHACK: force small delta to force an update (otherwise values could get stuck, e.g. for "Use Mods" context menu)
-		m_overrideSliders[i].slider->setValue(m_overrideSliders[i].slider->getMin() + 0.0001f);
-		m_overrideSliders[i].slider->setValue(m_overrideSliders[i].slider->getMin());
+		// HACKHACK: only animate while visible to workaround "Use mods" bug (if custom speed multiplier already set and then "Use mods" with different custom speed multiplier would reset to 1.0x because of anim)
+		m_overrideSliders[i].slider->setValue(m_overrideSliders[i].slider->getMin() + 0.0001f, m_bVisible);
+		m_overrideSliders[i].slider->setValue(m_overrideSliders[i].slider->getMin(), m_bVisible);
 	}
 
 	for (int i=0; i<m_experimentalMods.size(); i++)
 	{
+		ConVar *cvar = m_experimentalMods[i].cvar;
 		CBaseUICheckbox *checkboxPointer = dynamic_cast<CBaseUICheckbox*>(m_experimentalMods[i].element);
 		if (checkboxPointer != NULL)
+		{
+			// HACKHACK: we update both just in case because if the mod selector was not yet visible after a convar change (e.g. because of "Use mods") then the checkbox has not yet updated its internal state
 			checkboxPointer->setChecked(false);
+			if (cvar != NULL)
+				cvar->setValue(0.0f);
+		}
 	}
 
 	m_resetModsButton->animateClickColor();

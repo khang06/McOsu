@@ -71,6 +71,8 @@ private:
 	static ConVar *m_win_snd_fallback_dsound_ref;
 	static ConVar *m_osu_universal_offset_hardcoded_fallback_dsound_ref;
 	static ConVar *m_osu_slider_border_feather_ref;
+	static ConVar *m_osu_mod_random_ref;
+	static ConVar *m_osu_songbrowser_background_fade_in_duration_ref;
 
 	void drawVersionInfo(Graphics *g);
 	void updateLayout();
@@ -121,6 +123,8 @@ private:
 	CBaseUIButton *m_versionButton;
 
 	bool m_bDrawVersionNotificationArrow;
+	bool m_bDidUserUpdateFromOlderVersion;
+	bool m_bDidUserUpdateFromOlderVersionLe3300;
 
 	// custom
 	float m_fMainMenuAnimTime;
@@ -154,6 +158,9 @@ private:
 	OsuBeatmapStandard *m_mainMenuSliderTextBeatmapStandard;
 	std::vector<OsuHitObject*> m_mainMenuSliderTextBeatmapHitObjects;
 	float m_fMainMenuSliderTextRawHitCircleDiameter;
+
+	float m_fPrevShuffleTime;
+	float m_fBackgroundFadeInTime;
 };
 
 #endif
