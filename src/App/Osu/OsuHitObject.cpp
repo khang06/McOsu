@@ -330,8 +330,10 @@ void OsuHitObject::drawMissVisualizer(Graphics* g) {
 		const float fadeOutPercent = 0.75;
 		float alpha = clamp<float>(1.0f - ((animPercent - fadeOutPercent) / (1.0f - fadeOutPercent)), 0.0f, 1.0f);
 
-		if (m_bConsecutiveMisAim)
-			alpha *= 0.1f;
+		if (m_bConsecutiveMisAim) {
+			//alpha *= 0.1f;
+			return;
+		}
 
 		// TODO: probably a better way to do this
 		g->setColor(0xffff0000);
