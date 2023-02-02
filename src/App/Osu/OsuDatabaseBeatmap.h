@@ -468,7 +468,9 @@ private:
 
 	std::atomic<double> m_totalStars;
 	std::atomic<double> m_aimStars;
+	std::atomic<double> m_aimSliderFactor;
 	std::atomic<double> m_speedStars;
+	std::atomic<double> m_speedNotes;
 	std::atomic<double> m_pp;
 
 	std::atomic<long> m_iLengthMS;
@@ -480,6 +482,7 @@ private:
 	int m_iErrorCode;
 	std::atomic<int> m_iNumObjects;
 	std::atomic<int> m_iNumCircles;
+	std::atomic<int> m_iNumSliders;
 	std::atomic<int> m_iNumSpinners;
 	std::atomic<int> m_iMaxPossibleCombo;
 };
