@@ -1867,6 +1867,8 @@ OsuDatabaseBeatmapStarCalculator::OsuDatabaseBeatmapStarCalculator() : Resource(
 	m_fCS = 5.0f;
 	m_fOD = 5.0f;
 	m_fSpeedMultiplier = 1.0f;
+	m_bRelax = false;
+	m_bTouchDevice = false;
 
 	m_totalStars = 0.0;
 	m_aimStars = 0.0;
@@ -1939,7 +1941,6 @@ void OsuDatabaseBeatmapStarCalculator::initAsync()
 		m_aimSliderFactor = aimSliderFactor;
 		m_speedStars = speedStars;
 		m_speedNotes = speedNotes;
-		printf("total stars %f, aim stars %f, speed stars %f\n", m_totalStars.load(), m_aimStars.load(), m_speedStars.load());
 
 		// NOTE: this matches osu, i.e. it is the time from the start of the music track until the end of the last hitobject (including all breaks and initial skippable sections!)
 		if (diffres.diffobjects.size() > 0)
