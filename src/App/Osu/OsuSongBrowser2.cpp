@@ -960,6 +960,8 @@ void OsuSongBrowser2::draw(Graphics *g)
 	// background task busy notification
 	if (m_fBackgroundStarCalculationWorkNotificationTime > engine->getTime())
 	{
+		auto* beatmap = m_beatmaps[m_iBackgroundStarCalculationIndex];
+		debugLog("Stuck calculating stars for %S", beatmap->getTitle().wc_str());
 		UString busyMessage = "Calculating stars (";
 		busyMessage.append(UString::format("%i/%i) ...", m_iBackgroundStarCalculationIndex, m_beatmaps.size()));
 		McFont *font = engine->getResourceManager()->getFont("FONT_DEFAULT");
