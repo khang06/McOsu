@@ -1383,6 +1383,9 @@ bool OsuBeatmap::play()
 
 	onLoad();
 
+	// Reset hiterror bar
+	m_osu->getHUD()->resetHitErrorBar();
+
 	// load music
 	unloadMusicInt(); // need to reload in case of speed/pitch changes (just to be sure)
 	loadMusic(false, m_bForceStreamPlayback);

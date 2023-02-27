@@ -2247,7 +2247,7 @@ void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100
 		{
 			auto pos = Vector2(center.x, center.y - (m_osu->getScreenHeight() * osu_hud_hiterrorbar_offset_bottom_percent.getFloat()) - 24.0f);
 			g->setColor(COLOR(255, 255, 255, 255));
-			m_osu->getSkin()->getEditorRateArrow()->draw(g, pos + Vector2(m_fFloatingError * (m_osu->getScreenHeight() / 480.0f), 0), 0.6f);
+			m_osu->getSkin()->getEditorRateArrow()->draw(g, pos + Vector2(m_fVisibleFloatingError * (m_osu->getScreenHeight() / 480.0f), 0), 0.6f);
 		}
 	}
 
@@ -3160,7 +3160,7 @@ void OsuHUD::addHitError(long delta, bool miss, bool misaim)
 		float hitWindow50 = OsuGameRules::getHitWindow50(m_osu->getSelectedBeatmap());
 		float pos = (float)delta / hitWindow50 * (hitWindow50 / 2);
 		m_fFloatingError = m_fFloatingError * 0.8f + pos * 0.2f;
-		anim->moveQuadOut(&m_fVisibleFloatingError, m_fFloatingError, 800.0f, true);
+		anim->moveQuadOut(&m_fVisibleFloatingError, m_fFloatingError, 0.8f, true);
 	}
 }
 
@@ -3379,6 +3379,7 @@ void OsuHUD::resetHitErrorBar()
 {
 	m_hiterrors.clear();
 	m_fFloatingError = 0.0f;
+	m_fVisibleFloatingError = 0.0f;
 }
 
 McRect OsuHUD::getSkipClickRect()
