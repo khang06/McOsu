@@ -152,6 +152,8 @@ private:
 
 	VertexArrayObject *m_vao;
 	VertexArrayObject *m_vaoVR2;
+
+	int m_iLastFollowKey;
 };
 
 #endif

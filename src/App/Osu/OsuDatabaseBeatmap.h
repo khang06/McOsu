@@ -37,6 +37,7 @@ public:
 		long offset;
 
 		float msPerBeat;
+		int meter;
 
 		int sampleType;
 		int sampleSet;
@@ -95,6 +96,7 @@ public:
 
 		float beatLengthBase;
 		float beatLength;
+		int meter;
 
 		float volume;
 		int sampleType;

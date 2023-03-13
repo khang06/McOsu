@@ -53,6 +53,7 @@
 #include "OsuRichPresence.h"
 #include "OsuSteamWorkshop.h"
 #include "OsuModFPoSu.h"
+#include "OsuSimPadIntegration.h"
 
 #include "OsuBeatmap.h"
 #include "OsuDatabaseBeatmap.h"
@@ -130,6 +131,8 @@ ConVar osu_hide_cursor_during_gameplay("osu_hide_cursor_during_gameplay", false)
 
 ConVar osu_alt_f4_quits_even_while_playing("osu_alt_f4_quits_even_while_playing", true);
 ConVar osu_win_disable_windows_key_while_playing("osu_win_disable_windows_key_while_playing", true);
+
+ConVar osu_simpad_integration("osu_simpad_integration", true);
 
 ConVar *Osu::version = &osu_version;
 ConVar *Osu::debug = &osu_debug;
@@ -542,6 +545,10 @@ Osu::Osu(Osu2 *osu2, int instanceID)
 	// memory/performance optimization; if osu_mod_mafham is not enabled, reduce the two rendertarget sizes to 64x64, same for fposu
 	m_osu_mod_mafham_ref->setCallback( fastdelegate::MakeDelegate(this, &Osu::onModMafhamChange) );
 	m_osu_mod_fposu_ref->setCallback( fastdelegate::MakeDelegate(this, &Osu::onModFPoSuChange) );
+
+	// SimPad integration
+	m_simpad = new OsuSimPadIntegration();
+	m_bSimPadEnabled = false;
 }
 
 Osu::~Osu()
@@ -567,6 +574,7 @@ Osu::~Osu()
 	SAFE_DELETE(m_multiplayer);
 	SAFE_DELETE(m_skin);
 	SAFE_DELETE(m_backgroundImageHandler);
+	SAFE_DELETE(m_simpad);
 }
 
 void Osu::draw(Graphics *g)
@@ -1177,6 +1185,35 @@ void Osu::update()
 	{
 		m_bFireResolutionChangedScheduled = false;
 		fireResolutionChanged();
+	}
+
+	// SimPad integration
+	if (m_simpad) {
+		if (m_bSimPadEnabled != osu_simpad_integration.getBool()) {
+			m_bSimPadEnabled = osu_simpad_integration.getBool();
+			if (m_bSimPadEnabled)
+				m_simpad->start();
+			else
+				m_simpad->stop();
+		}
+		if (m_simpad->isRunning()) {
+			/*
+			const bool isPlayerPlaying = engine->hasFocus() && isInPlayMode() && getSelectedBeatmap() != NULL && !getSelectedBeatmap()->isRestartScheduled() && !m_bModAuto;
+			if (!isPlayerPlaying) {
+				for (int i = 0; i < 2; i++) {
+					auto time = engine->getTime() * 4;
+					auto freq = 0.3;
+					unsigned red = sin(freq * i * 4 + time) * 127 + 128;
+					unsigned green = sin(freq * i * 4 + 2 + time) * 127 + 128;
+					unsigned blue = sin(freq * i * 4 + 4 + time) * 127 + 128;
+					Color col = COLOR(255, red, green, blue);
+					m_simpad->setColor(i, col);
+				}
+			}
+			*/
+			
+			m_simpad->update();
+		}
 	}
 }
 

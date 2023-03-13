@@ -37,6 +37,7 @@ class OsuVRTutorial;
 class OsuChangelog;
 class OsuEditor;
 class OsuModFPoSu;
+class OsuSimPadIntegration;
 
 class ConVar;
 class Image;
@@ -203,6 +204,8 @@ public:
 	void updateConfineCursor();
 	void updateMouseSettings();
 	void updateWindowsKeyDisable();
+
+	OsuSimPadIntegration* getSimPad() const {return m_simpad;}
 
 private:
 	static Vector2 g_vInternalResolution;
@@ -385,6 +388,10 @@ private:
 	bool m_bVolumeInactiveToActiveScheduled;
 	float m_fVolumeInactiveToActiveAnim;
 	bool m_bFireDelayedFontReloadAndResolutionChangeToFixDesyncedUIScaleScheduled;
+
+	// SimPad integration
+	OsuSimPadIntegration* m_simpad;
+	bool m_bSimPadEnabled;
 };
 
 #endif

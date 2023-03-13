@@ -28,6 +28,7 @@
 #include "OsuGameRules.h"
 #include "OsuSliderRenderer.h"
 #include "OsuBeatmapStandard.h"
+#include "OsuSimPadIntegration.h"
 
 ConVar osu_slider_ball_tint_combo_color("osu_slider_ball_tint_combo_color", true);
 
@@ -187,6 +188,8 @@ OsuSlider::OsuSlider(char type, int repeat, float pixelLength, std::vector<Vecto
 
 	m_vao = NULL;
 	m_vaoVR2 = NULL;
+
+	m_iLastFollowKey = 0;
 }
 
 OsuSlider::~OsuSlider()
@@ -1338,6 +1341,28 @@ void OsuSlider::update(long curPos)
 			m_iPrevSliderSlideSoundSampleSet = -1;
 		}
 	}
+
+	// SimPad stuff
+	// TODO: This logic is really sketchy
+	bool stoppedTracking = false;
+	int lastLastFollowKey = m_iLastFollowKey;
+	if (m_bStartFinished && !m_bEndFinished && m_bCursorInside && m_beatmap->getOsu()->getSimPad()
+		&& (m_beatmap->isKey1Down() || m_beatmap->isKey2Down())
+		&& !m_beatmap->isPaused() && !m_beatmap->isWaiting() && m_beatmap->isPlaying())
+	{
+		Color comboColor = m_beatmap->getSkin()->getComboColorForCounter(m_iColorCounter, m_iColorOffset);
+		m_beatmap->getOsu()->getSimPad()->setColor(m_beatmap->isKey2Down(), comboColor);
+		m_iLastFollowKey = m_beatmap->isKey2Down() + 1;
+	} else {
+		stoppedTracking = true;
+	}
+
+	if (m_iLastFollowKey && (stoppedTracking || lastLastFollowKey != m_iLastFollowKey)) {
+		if (stoppedTracking)
+			m_iLastFollowKey = 0;
+		if (lastLastFollowKey)
+			m_beatmap->getOsu()->getSimPad()->startFade(lastLastFollowKey - 1);
+	}
 }
 
 void OsuSlider::updateAnimations(long curPos)
@@ -1484,7 +1509,7 @@ void OsuSlider::onClickEvent(std::vector<OsuBeatmap::CLICK> &clicks)
 
 				clicks.erase(clicks.begin());
 				m_startResult = result;
-				onHit(m_startResult, delta, false, targetDelta, targetAngle);
+				onHit(m_startResult, delta, false, targetDelta, targetAngle, false);
 			}
 		}
 	}

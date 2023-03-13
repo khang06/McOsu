@@ -29,6 +29,7 @@
 #include "OsuNotificationOverlay.h"
 #include "OsuModSelector.h"
 #include "OsuMainMenu.h"
+#include "OsuSimPadIntegration.h"
 
 #include "OsuDatabaseBeatmap.h"
 
@@ -1193,6 +1194,7 @@ void OsuBeatmap::keyPressed1(bool mouse)
 	click.musicPos = m_iCurMusicPosWithOffsets;
 	click.maniaColumn = -1;
 	click.pos = engine->getMouse()->getPos();
+	click.key = mouse ? -1 : 0;
 
 	if ((!m_osu->getModAuto() && !m_osu->getModRelax()) || !osu_auto_and_relax_block_user_input.getBool())
 		m_clicks.push_back(click);
@@ -1229,6 +1231,7 @@ void OsuBeatmap::keyPressed2(bool mouse)
 	click.musicPos = m_iCurMusicPosWithOffsets;
 	click.maniaColumn = -1;
 	click.pos = engine->getMouse()->getPos();
+	click.key = mouse ? -1 : 1;
 
 	if ((!m_osu->getModAuto() && !m_osu->getModRelax()) || !osu_auto_and_relax_block_user_input.getBool())
 		m_clicks.push_back(click);
@@ -1382,6 +1385,12 @@ bool OsuBeatmap::play()
 		m_hitobjects[i]->setPrevObject(m_hitobjects[i - 1]);
 
 	onLoad();
+
+	// SimPad stuff
+	if (m_osu->getSimPad()) {
+		for (int i = 0; i < OsuSimPadIntegration::KEYS; i++)
+			m_osu->getSimPad()->setColor(i, 0);
+	}
 
 	// Reset hiterror bar
 	m_osu->getHUD()->resetHitErrorBar();

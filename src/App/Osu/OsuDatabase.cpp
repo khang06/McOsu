@@ -1711,6 +1711,7 @@ void OsuDatabase::loadDB(OsuFile *db, bool &fallbackToRawLoad)
 					{
 						tp.offset = timingPoints[t].offset;
 						tp.msPerBeat = timingPoints[t].msPerBeat;
+						tp.meter = 4;
 						tp.timingChange = timingPoints[t].timingChange;
 						tp.kiai = false;
 					}

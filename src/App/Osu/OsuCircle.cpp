@@ -21,6 +21,7 @@
 #include "OsuSkinImage.h"
 #include "OsuGameRules.h"
 #include "OsuBeatmapStandard.h"
+#include "OsuSimPadIntegration.h"
 
 ConVar osu_bug_flicker_log("osu_bug_flicker_log", false);
 
@@ -634,16 +635,17 @@ void OsuCircle::onClickEvent(std::vector<OsuBeatmap::CLICK> &clicks)
 		OsuScore::HIT result = OsuGameRules::getHitResult(delta, m_beatmap);
 		if (result != OsuScore::HIT::HIT_NULL)
 		{
+			const int key = clicks[0].key;
 			const float targetDelta = cursorDelta / (m_beatmap->getHitcircleDiameter()/2.0f);
 			const float targetAngle = rad2deg(atan2(cursorPos.y - pos.y, cursorPos.x - pos.x));
 
 			clicks.erase(clicks.begin());
-			onHit(result, delta, targetDelta, targetAngle);
+			onHit(result, delta, targetDelta, targetAngle, key);
 		}
 	}
 }
 
-void OsuCircle::onHit(OsuScore::HIT result, long delta, float targetDelta, float targetAngle)
+void OsuCircle::onHit(OsuScore::HIT result, long delta, float targetDelta, float targetAngle, int key)
 {
 	// sound and hit animation
 	if (result != OsuScore::HIT::HIT_MISS)
@@ -665,6 +667,13 @@ void OsuCircle::onHit(OsuScore::HIT result, long delta, float targetDelta, float
 				openvr->getLeftController()->triggerHapticPulse(m_beatmap->getOsu()->getVR()->getHapticPulseStrength());
 			else
 				openvr->getRightController()->triggerHapticPulse(m_beatmap->getOsu()->getVR()->getHapticPulseStrength());
+		}
+
+		// SimPad stuff
+		if (key != -1 && m_beatmap->getOsu()->getSimPad()) {
+			Color comboColor = m_beatmap->getSkin()->getComboColorForCounter(m_iColorCounter, m_iColorOffset);
+			m_beatmap->getOsu()->getSimPad()->setColor(key, comboColor);
+			m_beatmap->getOsu()->getSimPad()->startFade(key);
 		}
 	}
 

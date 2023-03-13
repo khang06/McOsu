@@ -36,6 +36,7 @@
 #include "OsuOptionsMenu.h"
 #include "OsuKeyBindings.h"
 #include "OsuRichPresence.h"
+#include "OsuSimPadIntegration.h"
 
 #include "OsuDatabaseBeatmap.h"
 
@@ -622,6 +623,9 @@ OsuSongBrowser2::OsuSongBrowser2(Osu *osu) : OsuScreenBackable(osu)
 	m_bBackgroundStarCalcScheduledForce = false;
 	m_dynamicStarCalculator = new OsuDatabaseBeatmapStarCalculator();
 
+	// beat synced stuff
+	m_iLastBeat = -1;
+
 	updateLayout();
 }
 
@@ -1006,7 +1010,7 @@ void OsuSongBrowser2::draw(Graphics *g)
 		g->popTransform();
 		*/
 		// TODO: 3/4 time signature
-		auto progress = std::min(std::max(0.0f, (float)((curMusicPos - t.offset) % (std::max((long)t.beatLengthBase, (long)1) * 4)) / t.beatLengthBase), 3.99f);
+		auto progress = std::min(std::max(0.0f, std::fmodf(curMusicPos - t.offset, std::max(t.beatLengthBase * 4.0f, 1.0f)) / t.beatLengthBase), 3.99f);
 		Image* frames[] = {m_osu->getSkin()->getDanceFrame0(), m_osu->getSkin()->getDanceFrame1(), m_osu->getSkin()->getDanceFrame2(), m_osu->getSkin()->getDanceFrame3()};
 		Image* frame = frames[(int)floor(progress)];
 		g->setColor(0xFFFFFFFF);
@@ -1016,6 +1020,22 @@ void OsuSongBrowser2::draw(Graphics *g)
 			g->drawImage(frame);
 		}
 		g->popTransform();
+
+		// SimPad stuff
+		int beat = std::max((int)floor((curMusicPos - t.offset) / t.beatLengthBase), 0);
+		int measure = std::max((int)floor(beat / std::max(t.meter, 1)), 0);
+		if (m_osu->getSimPad()) {
+			int key = beat % 2;
+			Color colors[] = { COLOR(255, 255, 0, 0), COLOR(255, 0, 255, 0), COLOR(255, 0, 0, 255), COLOR(255, 255, 255, 0) };
+			if (m_iLastBeat != beat) {
+				m_osu->getSimPad()->setColor(key, colors[measure % 4]);
+
+				// Too laggy, looks like there's a limit of only ~62 calls per second
+				//m_osu->getSimPad()->startFade(key, t.beatLengthBase / 1000.0f * 2.0f);
+				m_osu->getSimPad()->setColor((key + 1) % 2, 0);
+			}
+			m_iLastBeat = beat;
+		}
 	}
 
 	// top ranks available info
@@ -1845,6 +1865,8 @@ void OsuSongBrowser2::onSelectionChange(OsuUISongBrowserButton *button, bool reb
 
 	if (rebuild)
 		rebuildSongButtons();
+
+	m_iLastBeat = -1;
 }
 
 void OsuSongBrowser2::onDifficultySelected(OsuDatabaseBeatmap *diff2, bool play, bool mp)

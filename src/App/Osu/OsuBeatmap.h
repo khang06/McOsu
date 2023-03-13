@@ -34,6 +34,7 @@ public:
 		long musicPos;
 		int maniaColumn;
 		Vector2 pos;
+		int key;
 	};
 
 public:

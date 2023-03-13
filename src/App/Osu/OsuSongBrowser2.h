@@ -403,6 +403,9 @@ private:
 	bool m_bBackgroundStarCalcScheduled;
 	bool m_bBackgroundStarCalcScheduledForce;
 	OsuDatabaseBeatmapStarCalculator *m_dynamicStarCalculator;
+
+	// beat synced stuff
+	int m_iLastBeat;
 };
 
 #endif

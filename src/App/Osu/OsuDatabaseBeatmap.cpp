@@ -272,6 +272,7 @@ OsuDatabaseBeatmap::PRIMITIVE_CONTAINER OsuDatabaseBeatmap::loadPrimitiveObjects
 							{
 								t.offset = (long)std::round(tpOffset);
 								t.msPerBeat = tpMSPerBeat;
+								t.meter = tpMeter;
 
 								t.sampleType = tpSampleType;
 								t.sampleSet = tpSampleSet;
@@ -290,6 +291,7 @@ OsuDatabaseBeatmap::PRIMITIVE_CONTAINER OsuDatabaseBeatmap::loadPrimitiveObjects
 							{
 								t.offset = (long)std::round(tpOffset);
 								t.msPerBeat = tpMSPerBeat;
+								t.meter = 4;
 
 								t.sampleType = 0;
 								t.sampleSet = 0;
@@ -1130,6 +1132,7 @@ bool OsuDatabaseBeatmap::loadMetadata(OsuDatabaseBeatmap *databaseBeatmap)
 							{
 								t.offset = (long)std::round(tpOffset);
 								t.msPerBeat = tpMSPerBeat;
+								t.meter = tpMeter;
 
 								t.sampleType = tpSampleType;
 								t.sampleSet = tpSampleSet;
@@ -1148,6 +1151,7 @@ bool OsuDatabaseBeatmap::loadMetadata(OsuDatabaseBeatmap *databaseBeatmap)
 							{
 								t.offset = (long)std::round(tpOffset);
 								t.msPerBeat = tpMSPerBeat;
+								t.meter = 4;
 
 								t.sampleType = 0;
 								t.sampleSet = 0;
@@ -1705,6 +1709,7 @@ OsuDatabaseBeatmap::TIMING_INFO OsuDatabaseBeatmap::getTimingInfoForTimeAndTimin
 	ti.offset = 0;
 	ti.beatLengthBase = 1;
 	ti.beatLength = 1;
+	ti.meter = 4;
 	ti.volume = 100;
 	ti.sampleType = 0;
 	ti.sampleSet = 0;
@@ -1755,6 +1760,7 @@ OsuDatabaseBeatmap::TIMING_INFO OsuDatabaseBeatmap::getTimingInfoForTimeAndTimin
 
 		ti.isNaN = std::isnan(timingpoints[samplePoint].msPerBeat) || std::isnan(timingpoints[point].msPerBeat);
 		ti.beatLength = ti.beatLengthBase * mult;
+		ti.meter = timingpoints[point].meter;
 
 		ti.volume = timingpoints[audioPoint].volume;
 		ti.sampleType = timingpoints[audioPoint].sampleType;
