@@ -24,7 +24,7 @@ public:
 
 private:
 	static void* ThreadProc(void*);
-	bool sendData(unsigned char data[5]);
+	bool sendData(unsigned char data[6]);
 
 	McThread* m_updateThread;
 	bool m_bStopThread;

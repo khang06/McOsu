@@ -11,12 +11,13 @@ void* OsuSimPadIntegration::ThreadProc(void* data) {
 				continue;
 
 			float alpha = COLOR_GET_Af(self->m_curColor[i]);
-			unsigned char cmd[5];
-			cmd[0] = 0x06 + i; // Command type
-			cmd[1] = (int)(COLOR_GET_Ri(self->m_curColor[i]) * alpha);
-			cmd[2] = (int)(COLOR_GET_Gi(self->m_curColor[i]) * alpha);
-			cmd[3] = (int)(COLOR_GET_Bi(self->m_curColor[i]) * alpha);
-			cmd[4] = 0x04; // Brightness (100%)
+			unsigned char cmd[6];
+			cmd[0] = 0x00; // Command type (special)
+			cmd[1] = 0x03; // Subcommand (set LED)
+			cmd[2] = i + 1; // LED index
+			cmd[3] = (int)(COLOR_GET_Ri(self->m_curColor[i]) * alpha);
+			cmd[4] = (int)(COLOR_GET_Gi(self->m_curColor[i]) * alpha);
+			cmd[5] = (int)(COLOR_GET_Bi(self->m_curColor[i]) * alpha);
 
 			self->sendData(cmd);
 		}
@@ -122,11 +123,10 @@ void OsuSimPadIntegration::startFade(size_t key, float duration) {
 	anim->moveLinear(&m_fAlpha[key], 0.0, duration, true);
 }
 
-bool OsuSimPadIntegration::sendData(unsigned char data[5]) {
+bool OsuSimPadIntegration::sendData(unsigned char data[6]) {
 	unsigned char real_data[7];
 	real_data[0] = 0; // Report ID
-	memcpy(&real_data[1], data, 5);
-	real_data[6] = real_data[2] ^ real_data[3] ^ real_data[4] ^ real_data[5]; // Checksum
+	memcpy(&real_data[1], data, 6);
 
 	return hid_write(m_device, real_data, sizeof(real_data)) != -1;
 }
