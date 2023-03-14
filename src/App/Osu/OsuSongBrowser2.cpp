@@ -1028,11 +1028,9 @@ void OsuSongBrowser2::draw(Graphics *g)
 			int key = beat % 2;
 			Color colors[] = { COLOR(255, 255, 0, 0), COLOR(255, 0, 255, 0), COLOR(255, 0, 0, 255), COLOR(255, 255, 255, 0) };
 			if (m_iLastBeat != beat) {
-				m_osu->getSimPad()->setColor(key, colors[measure % 4]);
-
-				// Too laggy, looks like there's a limit of only ~62 calls per second
-				//m_osu->getSimPad()->startFade(key, t.beatLengthBase / 1000.0f * 2.0f);
 				m_osu->getSimPad()->setColor((key + 1) % 2, 0);
+				m_osu->getSimPad()->setColor(key, colors[measure % 4]);
+				m_osu->getSimPad()->startFade(key, t.beatLengthBase / 1000.0f);
 			}
 			m_iLastBeat = beat;
 		}

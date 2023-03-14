@@ -16,7 +16,7 @@ public:
 	void update();
 
 	void setColor(size_t key, Color color);
-	void startFade(size_t key, float duration = 0.2f);
+	void startFade(size_t key, float duration = 0.25f);
 
 	bool isRunning() {
 		return m_device != NULL;

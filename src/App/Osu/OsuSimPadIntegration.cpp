@@ -2,7 +2,6 @@
 #include <Engine.h>
 #include "OsuSimPadIntegration.h"
 
-// hid_write seems to be horribly slow, so this runs on another thread
 void* OsuSimPadIntegration::ThreadProc(void* data) {
 	auto* self = (OsuSimPadIntegration*)data;
 	while (!self->m_bStopThread) {
@@ -21,6 +20,8 @@ void* OsuSimPadIntegration::ThreadProc(void* data) {
 
 			self->sendData(cmd);
 		}
+
+		env->sleep(10);
 	}
 
 	return NULL;
