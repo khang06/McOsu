@@ -21,7 +21,7 @@ void* OsuSimPadIntegration::ThreadProc(void* data) {
 			self->sendData(cmd);
 		}
 
-		env->sleep(10);
+		env->sleep(5);
 	}
 
 	return NULL;
@@ -110,9 +110,9 @@ void OsuSimPadIntegration::setColor(size_t key, Color color) {
 	// Need to do sRGB -> linear, otherwise some colors look too washed out
 	m_wishColor[key] = COLOR(
 		COLOR_GET_Ai(color),
-		(int)(clamp<float>(std::powf(COLOR_GET_Rf(color), 2.2f), 0.0f, 1.0f) * 255.0f),
-		(int)(clamp<float>(std::powf(COLOR_GET_Gf(color), 2.2f), 0.0f, 1.0f) * 255.0f),
-		(int)(clamp<float>(std::powf(COLOR_GET_Bf(color), 2.2f), 0.0f, 1.0f) * 255.0f)
+		(int)(clamp<float>(std::powf(COLOR_GET_Rf(color), 2.8f), 0.0f, 1.0f) * 255.0f),
+		(int)(clamp<float>(std::powf(COLOR_GET_Gf(color), 2.8f), 0.0f, 1.0f) * 255.0f),
+		(int)(clamp<float>(std::powf(COLOR_GET_Bf(color), 2.8f), 0.0f, 1.0f) * 255.0f)
 	);
 }
 

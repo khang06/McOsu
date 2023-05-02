@@ -116,6 +116,7 @@ public:
 
 	static LOAD_DIFFOBJ_RESULT loadDifficultyHitObjects(const UString &osuFilePath, Osu::GAMEMODE gameMode, float AR, float CS, float speedMultiplier, bool calculateStarsInaccurately = false);
 	static bool loadMetadata(OsuDatabaseBeatmap *databaseBeatmap);
+	static bool loadTimingPoints(OsuDatabaseBeatmap *databaseBeatmap);
 	static LOAD_GAMEPLAY_RESULT loadGameplay(OsuDatabaseBeatmap *databaseBeatmap, OsuBeatmap *beatmap);
 
 
@@ -217,7 +218,7 @@ public:
 	inline long getLocalOffset() const {return m_iLocalOffset;}
 	inline long getOnlineOffset() const {return m_iOnlineOffset;}
 
-
+	inline bool getRealTimingPointsLoaded() const { return m_bRealTimingPointsLoaded; }
 
 private:
 	// raw metadata
@@ -280,6 +281,8 @@ private:
 
 	long m_iLocalOffset;
 	long m_iOnlineOffset;
+
+	bool m_bRealTimingPointsLoaded;
 
 
 

@@ -129,6 +129,8 @@ OsuDatabaseBeatmap::OsuDatabaseBeatmap(Osu *osu, UString filePath, UString folde
 
 	m_iLocalOffset = 0;
 	m_iOnlineOffset = 0;
+
+	m_bRealTimingPointsLoaded = false;
 }
 
 OsuDatabaseBeatmap::OsuDatabaseBeatmap(Osu *osu, std::vector<OsuDatabaseBeatmap*> &difficulties) : OsuDatabaseBeatmap(osu, "", "")
@@ -1321,6 +1323,136 @@ bool OsuDatabaseBeatmap::loadMetadata(OsuDatabaseBeatmap *databaseBeatmap)
 	// special case: old beatmaps have AR = OD, there is no ApproachRate stored
 	if (!foundAR)
 		databaseBeatmap->m_fAR = databaseBeatmap->m_fOD;
+
+	return true;
+}
+
+bool OsuDatabaseBeatmap::loadTimingPoints(OsuDatabaseBeatmap* databaseBeatmap)
+{
+	if (databaseBeatmap == NULL) return false;
+	if (databaseBeatmap->m_difficulties.size() > 0) return false; // we are just a container
+
+	// reset
+	databaseBeatmap->m_timingpoints = std::vector<TIMINGPOINT>();
+
+	if (Osu::debug->getBool())
+		debugLog("OsuDatabaseBeatmap::loadTimingPoints() : %s\n", databaseBeatmap->m_sFilePath.toUtf8());
+
+	// open osu file
+	{
+		File file(!databaseBeatmap->m_bFilePathIsInMemoryBeatmap ? databaseBeatmap->m_sFilePath : "");
+		if (!file.canRead() && !databaseBeatmap->m_bFilePathIsInMemoryBeatmap)
+		{
+			debugLog("Osu Error: Couldn't read file %s\n", databaseBeatmap->m_sFilePath.toUtf8());
+			return false;
+		}
+
+		std::istringstream ss(databaseBeatmap->m_bFilePathIsInMemoryBeatmap ? databaseBeatmap->m_sFilePath.toUtf8() : ""); // eh
+
+		// load metadata only
+		int curBlock = -1;
+		unsigned long long timingPointSortHack = 0;
+		char stringBuffer[1024];
+		std::string curLine;
+		while (!databaseBeatmap->m_bFilePathIsInMemoryBeatmap ? file.canRead() : static_cast<bool>(std::getline(ss, curLine)))
+		{
+			UString uCurLine;
+			char* curLineChar = NULL;
+			{
+				if (!databaseBeatmap->m_bFilePathIsInMemoryBeatmap)
+				{
+					uCurLine = file.readLine();
+					curLineChar = (char*)uCurLine.toUtf8();
+					curLine = std::string(curLineChar);
+				}
+				else
+					curLineChar = (char*)curLine.c_str();
+			}
+
+			const int commentIndex = curLine.find("//");
+			if (commentIndex == std::string::npos || commentIndex != 0) // ignore comments, but only if at the beginning of a line (e.g. allow Artist:DJ'TEKINA//SOMETHING)
+			{
+				if (curLine.find("[General]") != std::string::npos)
+					curBlock = 0;
+				else if (curLine.find("[Metadata]") != std::string::npos)
+					curBlock = 1;
+				else if (curLine.find("[Difficulty]") != std::string::npos)
+					curBlock = 2;
+				else if (curLine.find("[Events]") != std::string::npos)
+					curBlock = 3;
+				else if (curLine.find("[TimingPoints]") != std::string::npos)
+					curBlock = 4;
+				else if (curLine.find("[HitObjects]") != std::string::npos)
+					break; // NOTE: stop early
+
+				switch (curBlock)
+				{
+				case 4: // TimingPoints
+				{
+					// old beatmaps: Offset, Milliseconds per Beat
+					// old new beatmaps: Offset, Milliseconds per Beat, Meter, Sample Type, Sample Set, Volume, !Inherited
+					// new new beatmaps: Offset, Milliseconds per Beat, Meter, Sample Type, Sample Set, Volume, !Inherited, Kiai Mode
+
+					double tpOffset;
+					float tpMSPerBeat;
+					int tpMeter;
+					int tpSampleType, tpSampleSet;
+					int tpVolume;
+					int tpTimingChange;
+					int tpKiai = 0; // optional
+					if (sscanf(curLineChar, " %lf , %f , %i , %i , %i , %i , %i , %i", &tpOffset, &tpMSPerBeat, &tpMeter, &tpSampleType, &tpSampleSet, &tpVolume, &tpTimingChange, &tpKiai) == 8
+						|| sscanf(curLineChar, " %lf , %f , %i , %i , %i , %i , %i", &tpOffset, &tpMSPerBeat, &tpMeter, &tpSampleType, &tpSampleSet, &tpVolume, &tpTimingChange) == 7)
+					{
+						TIMINGPOINT t;
+						{
+							t.offset = (long)std::round(tpOffset);
+							t.msPerBeat = tpMSPerBeat;
+							t.meter = tpMeter;
+
+							t.sampleType = tpSampleType;
+							t.sampleSet = tpSampleSet;
+							t.volume = tpVolume;
+
+							t.timingChange = tpTimingChange == 1;
+							t.kiai = tpKiai > 0;
+
+							t.sortHack = timingPointSortHack++;
+						}
+						databaseBeatmap->m_timingpoints.push_back(t);
+					}
+					else if (sscanf(curLineChar, " %lf , %f", &tpOffset, &tpMSPerBeat) == 2)
+					{
+						TIMINGPOINT t;
+						{
+							t.offset = (long)std::round(tpOffset);
+							t.msPerBeat = tpMSPerBeat;
+							t.meter = 4;
+
+							t.sampleType = 0;
+							t.sampleSet = 0;
+							t.volume = 100;
+
+							t.timingChange = true;
+							t.kiai = false;
+
+							t.sortHack = timingPointSortHack++;
+						}
+						databaseBeatmap->m_timingpoints.push_back(t);
+					}
+				}
+				break;
+				}
+			}
+		}
+	}
+
+	if (databaseBeatmap->m_timingpoints.size() > 0)
+	{
+		// sort timingpoints by time
+		std::sort(databaseBeatmap->m_timingpoints.begin(), databaseBeatmap->m_timingpoints.end(), TimingPointSortComparator());
+	}
+
+	databaseBeatmap->m_bRealTimingPointsLoaded = true;
 
 	return true;
 }

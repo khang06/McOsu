@@ -992,6 +992,9 @@ void OsuSongBrowser2::draw(Graphics *g)
 			- getSelectedBeatmap()->getSelectedDifficulty2()->getOnlineOffset()
 			- (getSelectedBeatmap()->getSelectedDifficulty2()->getVersion() < 5 ? m_osu_old_beatmap_offset_ref->getInt() : 0);
 
+		if (!getSelectedBeatmap()->getSelectedDifficulty2()->getRealTimingPointsLoaded())
+			OsuDatabaseBeatmap::loadTimingPoints(getSelectedBeatmap()->getSelectedDifficulty2());
+
 		OsuDatabaseBeatmap::TIMING_INFO t = m_osu->getSelectedBeatmap()->getSelectedDifficulty2()->getTimingInfoForTime(curMusicPos);
 
 		if (t.beatLengthBase == 0.0f) // bah
@@ -1026,10 +1029,9 @@ void OsuSongBrowser2::draw(Graphics *g)
 		int measure = std::max((int)floor(beat / std::max(t.meter, 1)), 0);
 		if (m_osu->getSimPad()) {
 			int key = beat % 2;
-			Color colors[] = { COLOR(255, 255, 0, 0), COLOR(255, 0, 255, 0), COLOR(255, 0, 0, 255), COLOR(255, 255, 255, 0) };
 			if (m_iLastBeat != beat) {
 				m_osu->getSimPad()->setColor((key + 1) % 2, 0);
-				m_osu->getSimPad()->setColor(key, colors[measure % 4]);
+				m_osu->getSimPad()->setColor(key, m_osu->getSkin()->getComboColorForCounter(measure, 0));
 				m_osu->getSimPad()->startFade(key, t.beatLengthBase / 1000.0f);
 			}
 			m_iLastBeat = beat;
