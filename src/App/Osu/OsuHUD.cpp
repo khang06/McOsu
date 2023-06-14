@@ -3378,6 +3378,7 @@ void OsuHUD::selectVolumeNext()
 void OsuHUD::resetHitErrorBar()
 {
 	m_hiterrors.clear();
+	anim->deleteExistingAnimation(&m_fVisibleFloatingError);
 	m_fFloatingError = 0.0f;
 	m_fVisibleFloatingError = 0.0f;
 }
