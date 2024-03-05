@@ -121,6 +121,7 @@ void OsuScore::addHitResult(OsuBeatmap *beatmap, OsuHitObject *hitObject, HIT hi
 		if (!ignoreOnHitErrorBar)
 		{
 			m_hitdeltas.push_back((int)delta);
+			m_hitdeltasWithTime.push_back(OsuScore::DeltaWithTime{ hitObject->getTime(), (int)delta, hitObject->getSortHack() });
 			m_osu->getHUD()->addHitError(delta);
 		}
 
@@ -134,6 +135,8 @@ void OsuScore::addHitResult(OsuBeatmap *beatmap, OsuHitObject *hitObject, HIT hi
 	{
 		if (osu_hiterrorbar_misses.getBool() && !ignoreOnHitErrorBar && delta <= (long)OsuGameRules::getHitWindow50(beatmap))
 			m_osu->getHUD()->addHitError(delta, true);
+
+		m_hitdeltasWithTime.push_back(OsuScore::DeltaWithTime{ hitObject->getTime(), INT32_MIN, hitObject->getSortHack() });
 
 		m_iCombo = 0;
 	}

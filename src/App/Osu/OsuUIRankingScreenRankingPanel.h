@@ -11,9 +11,9 @@
 #include "CBaseUIImage.h"
 
 #include "OsuDatabase.h"
+#include "OsuScore.h"
 
 class Osu;
-class OsuScore;
 class OsuSkinImage;
 
 class OsuUIRankingScreenRankingPanel : public CBaseUIImage
@@ -42,6 +42,8 @@ private:
 	int m_iCombo;
 	float m_fAccuracy;
 	bool m_bPerfect;
+
+	std::vector<OsuScore::DeltaWithTime> m_hitdeltasWithTime;
 };
 
 #endif

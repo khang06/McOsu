@@ -119,12 +119,22 @@ void OsuUIRankingScreenRankingPanel::draw(Graphics *g)
 
 	// draw accuracy label
 	Vector2 hardcodedOsuRankingAccuracyImageSize = Vector2(192, 58) * (m_osu->getSkin()->isRankingAccuracy2x() ? 2.0f : 1.0f);
-	scale = m_osu->getImageScale(m_osu, hardcodedOsuRankingAccuracyImageSize, 36.0f) * uiScale;
+	scale = m_osu->getImageScale(m_osu, hardcodedOsuRankingAccuracyImageSize, 137.0f) * uiScale;
 	g->pushTransform();
 	{
 		g->scale(scale, scale);
 		g->translate(m_vPos.x + m_osu->getSkin()->getRankingAccuracy()->getWidth()*scale*0.5f + m_osu->getUIScale(m_osu, 183.0f) * uiScale, m_vPos.y + (m_osu->getUIScale(m_osu, row4 - 3 - row4ImageOffset) + globalYOffset) * uiScale);
 		g->drawImage(m_osu->getSkin()->getRankingAccuracy());
+	}
+	g->popTransform();
+
+	// draw hitdelta stuff
+	scale = m_osu->getImageScale(m_osu, m_osu->getSkin()->getRankingGraph(), 111) * uiScale;
+	g->pushTransform();
+	{
+		g->scale(scale, scale);
+		g->translate(m_vPos.x + m_osu->getUIScale(m_osu, 160.0f) + m_osu->getSkin()->getRankingGraph()->getWidth() * scale * 0.5f, m_vPos.y + (m_osu->getUIScale(m_osu, m_osu->getSkin()->getVersion() > 1.0f ? 380 : 360) + globalYOffset));
+		g->drawImage(m_osu->getSkin()->getRankingGraph());
 	}
 	g->popTransform();
 
@@ -169,6 +179,20 @@ void OsuUIRankingScreenRankingPanel::setScore(OsuScore *score)
 	m_iCombo = score->getComboMax();
 	m_fAccuracy = score->getAccuracy();
 	m_bPerfect = (score->getComboFull() > 0 && m_iCombo >= score->getComboFull());
+
+	m_hitdeltasWithTime = score->getHitDeltasWithTime();
+	struct HitDeltaSortComparator
+	{
+		bool operator() (OsuScore::DeltaWithTime a, OsuScore::DeltaWithTime b) const
+		{
+			// strict weak ordering!
+			if (a.time == b.time)
+				return a.sortHack < b.sortHack;
+			else
+				return a.time < b.time;
+		}
+	};
+	std::sort(m_hitdeltasWithTime.begin(), m_hitdeltasWithTime.end(), HitDeltaSortComparator());
 }
 
 void OsuUIRankingScreenRankingPanel::setScore(OsuDatabase::Score score)

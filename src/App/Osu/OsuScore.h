@@ -56,6 +56,13 @@ public:
 		GRADE_N
 	};
 
+	struct DeltaWithTime
+	{
+		int time;
+		int delta;
+		unsigned long long sortHack;
+	};
+
 	static float calculateAccuracy(int num300s, int num100s, int num50s, int numMisses);
 	static GRADE calculateGrade(int num300s, int num100s, int num50s, int numMisses, bool modHidden, bool modFlashlight);
 
@@ -115,6 +122,8 @@ public:
 
 	inline bool isUnranked() const {return m_bIsUnranked;}
 
+	inline std::vector<DeltaWithTime> getHitDeltasWithTime() const {return m_hitdeltasWithTime;}
+
 	static double getHealthIncrease(OsuBeatmap *beatmap, OsuScore::HIT hit);
 	static double getHealthIncrease(OsuScore::HIT hit, double HP = 5.0f, double hpMultiplierNormal = 1.0f, double hpMultiplierComboEnd = 1.0f, double hpBarMaximumForNormalization = 200.0f);
 
@@ -132,6 +141,7 @@ private:
 
 	std::vector<HIT> m_hitresults;
 	std::vector<int> m_hitdeltas;
+	std::vector<DeltaWithTime> m_hitdeltasWithTime;
 
 	GRADE m_grade;
 

@@ -1413,7 +1413,7 @@ void OsuDatabase::loadDB(OsuFile *db, bool &fallbackToRawLoad)
 			//debugLog("%f stars for %u\n", starRating, mods);
 
 			if (mods == 0)
-				numOsuStandardStars = starRating;
+				numOsuStandardStars = abs(starRating); // lol
 		}
 		// NOTE: if we have our own stars cached then prefer that
 		{
