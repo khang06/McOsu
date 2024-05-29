@@ -228,7 +228,7 @@ float OsuDifficultyHitObject::getT(long pos, bool raw)
 
 ConVar* OsuDifficultyCalculator::m_osu_slider_scorev2_ref = NULL;
 
-double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDifficultyHitObject>& sortedHitObjects, float CS, float OD, float speedMultiplier, bool relax, bool touchDevice, double* aim, double* aimSliderFactor, double* speed, double* speedNotes, int upToObjectIndex, std::vector<double>* outAimStrains, std::vector<double>* outSpeedStrains)
+double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDifficultyHitObject>& sortedHitObjects, float CS, float OD, float speedMultiplier, bool relax, bool touchDevice, double* aim, double* aimSliderFactor, double* difficultAimStrains, double* speed, double* speedNotes, double* difficultSpeedStrains, int upToObjectIndex, std::vector<double>* outAimStrains, std::vector<double>* outSpeedStrains)
 {
 	// NOTE: depends on speed multiplier + CS + OD + relax + touchDevice
 
@@ -424,7 +424,7 @@ double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDi
 			strains[Skills::skillToIndex(dtype)] = currentStrain;
 		}
 
-		static double calculate_difficulty(const Skills::Skill type, const std::vector<DiffObject>& dobjects, std::vector<double>* outStrains = NULL, double* outRelevantNotes = NULL)
+		static double calculate_difficulty(const Skills::Skill type, const std::vector<DiffObject>& dobjects, std::vector<double>* outStrains = NULL, double* outDifficultStrains = NULL, double* outRelevantNotes = NULL)
 		{
 			// (old) see https://github.com/ppy/osu/blob/master/osu.Game/Rulesets/Difficulty/Skills/Skill.cs
 			// (new) see https://github.com/ppy/osu/blob/master/osu.Game/Rulesets/Difficulty/Skills/StrainSkill.cs
@@ -437,7 +437,7 @@ double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDi
 			double interval_end = std::ceil((double)dobjects[0].ho->time / strain_step) * strain_step;
 			double max_strain = 0.0;
 
-			// used for calculating relevant note count for speed pp
+			// used for calculating relevant note count for speed pp and difficult strains
 			std::vector<double> objectStrains;
 
 			std::vector<double> highestStrains;
@@ -462,7 +462,7 @@ double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDi
 				// calculate max strain for this interval
 				double cur_strain = cur.strains[Skills::skillToIndex(type)] * (type == Skills::Skill::SPEED ? cur.rhythm : 1.0);
 				max_strain = std::max(max_strain, cur_strain);
-				if (outRelevantNotes)
+				if (outRelevantNotes || outDifficultStrains)
 					objectStrains.push_back(cur_strain);
 			}
 
@@ -548,6 +548,25 @@ double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDi
 				{
 					difficulty += highestStrains[i] * weight;
 					weight *= decay_weight;
+				}
+			}
+
+			// see CountDifficultStrains @ https://github.com/ppy/osu/pull/16280/files#diff-07543a9ffe2a8d7f02cadf8ef7f81e3d7ec795ec376b2fff8bba7b10fb574e19R78
+			if (outDifficultStrains)
+			{
+				if (difficulty == 0.0)
+				{
+					*outDifficultStrains = difficulty;
+				}
+				else
+				{
+					double consistentTopStrain = difficulty / 10.0;
+					double tempSum = 0.0;
+					for (size_t i = 0; i < objectStrains.size(); i++)
+					{
+						tempSum += 1.1 / (1 + std::exp(-10 * (objectStrains[i] / consistentTopStrain - 0.88)));
+					}
+					*outDifficultStrains = tempSum;
 				}
 			}
 
@@ -1034,8 +1053,8 @@ double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDi
 
 	// calculate final difficulty (weigh strains)
 	double aimNoSliders = osu_stars_xexxar_angles_sliders.getBool() ? DiffObject::calculate_difficulty(Skills::Skill::AIM_NO_SLIDERS, diffObjects) : 0.0;
-	*aim = DiffObject::calculate_difficulty(Skills::Skill::AIM_SLIDERS, diffObjects, outAimStrains);
-	*speed = DiffObject::calculate_difficulty(Skills::Skill::SPEED, diffObjects, outSpeedStrains, speedNotes);
+	*aim = DiffObject::calculate_difficulty(Skills::Skill::AIM_SLIDERS, diffObjects, outAimStrains, difficultAimStrains);
+	*speed = DiffObject::calculate_difficulty(Skills::Skill::SPEED, diffObjects, outSpeedStrains, difficultSpeedStrains, speedNotes);
 
 	static const double star_scaling_factor = 0.0675;
 
@@ -1057,7 +1076,7 @@ double OsuDifficultyCalculator::calculateStarDiffForHitObjects(std::vector<OsuDi
 	return calculateTotalStarsFromSkills(*aim, *speed);
 }
 
-double OsuDifficultyCalculator::calculatePPv2(Osu* osu, OsuBeatmap* beatmap, double aim, double aimSliderFactor, double speed, double speedNotes, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo, int misses, int c300, int c100, int c50)
+double OsuDifficultyCalculator::calculatePPv2(Osu* osu, OsuBeatmap* beatmap, double aim, double aimSliderFactor, double aimDifficultStrains, double speed, double speedNotes, double speedDifficultStrains, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo, int misses, int c300, int c100, int c50)
 {
 	// NOTE: depends on active mods + OD + AR
 
@@ -1071,10 +1090,10 @@ double OsuDifficultyCalculator::calculatePPv2(Osu* osu, OsuBeatmap* beatmap, dou
 		modsLegacy |= (m_osu_slider_scorev2_ref->getBool() ? OsuReplay::Mods::ScoreV2 : 0);
 	}
 
-	return calculatePPv2(modsLegacy, osu->getSpeedMultiplier(), beatmap->getAR(), beatmap->getOD(), aim, aimSliderFactor, speed, speedNotes, numHitObjects, numCircles, numSliders, numSpinners, maxPossibleCombo, combo, misses, c300, c100, c50);
+	return calculatePPv2(modsLegacy, osu->getSpeedMultiplier(), beatmap->getAR(), beatmap->getOD(), aim, aimSliderFactor, aimDifficultStrains, speed, speedNotes, speedDifficultStrains, numHitObjects, numCircles, numSliders, numSpinners, maxPossibleCombo, combo, misses, c300, c100, c50);
 }
 
-double OsuDifficultyCalculator::calculatePPv2(int modsLegacy, double timescale, double ar, double od, double aim, double aimSliderFactor, double speed, double speedNotes, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo, int misses, int c300, int c100, int c50)
+double OsuDifficultyCalculator::calculatePPv2(int modsLegacy, double timescale, double ar, double od, double aim, double aimSliderFactor, double aimDifficultStrains, double speed, double speedNotes, double speedDifficultStrains, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo, int misses, int c300, int c100, int c50)
 {
 	// NOTE: depends on active mods + OD + AR
 
@@ -1114,8 +1133,10 @@ double OsuDifficultyCalculator::calculatePPv2(int modsLegacy, double timescale, 
 	{
 		attributes.AimStrain = aim;
 		attributes.SliderFactor = aimSliderFactor;
+		attributes.AimDifficultStrainCount = aimDifficultStrains;
 		attributes.SpeedStrain = speed;
 		attributes.SpeedNoteCount = speedNotes;
+		attributes.SpeedDifficultStrainCount = speedDifficultStrains;
 		attributes.ApproachRate = ar;
 		attributes.OverallDifficulty = od;
 		attributes.SliderCount = numSliders;
@@ -1186,14 +1207,10 @@ double OsuDifficultyCalculator::computeAimValue(const ScoreData& score, const Os
 		+ (score.totalHits > 2000 ? std::log10(((double)score.totalHits / 2000.0)) * 0.5 : 0.0);
 	aimValue *= lengthBonus;
 
-	// see https://github.com/ppy/osu-performance/pull/129/
-	// Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
+	// miss penalty
+	// see https://github.com/ppy/osu/pull/16280/
 	if (effectiveMissCount > 0 && score.totalHits > 0)
-		aimValue *= 0.97 * std::pow(1.0 - std::pow(effectiveMissCount / (double)score.totalHits, 0.775), effectiveMissCount);
-
-	// combo scaling
-	if (score.beatmapMaxCombo > 0)
-		aimValue *= std::min(std::pow((double)score.scoreMaxCombo, 0.8) / std::pow((double)score.beatmapMaxCombo, 0.8), 1.0);
+		aimValue *= 0.96 / ((effectiveMissCount / (4 * std::pow(std::log(attributes.AimDifficultStrainCount), 0.94))) + 1);
 
 	// ar bonus
 	double approachRateFactor = 0.0; // see https://github.com/ppy/osu-performance/pull/125/
@@ -1240,14 +1257,10 @@ double OsuDifficultyCalculator::computeSpeedValue(const ScoreData& score, const 
 		+ (score.totalHits > 2000 ? std::log10(((double)score.totalHits / 2000.0)) * 0.5 : 0.0);
 	speedValue *= lengthBonus;
 
-	// see https://github.com/ppy/osu-performance/pull/129/
-	// Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
-	if (effectiveMissCount > 0 && score.totalHits > 0)
-		speedValue *= 0.97 * std::pow(1.0 - std::pow(effectiveMissCount / (double)score.totalHits, 0.775), std::pow(effectiveMissCount, 0.875));
-
-	// combo scaling
-	if (score.beatmapMaxCombo > 0)
-		speedValue *= std::min(std::pow((double)score.scoreMaxCombo, 0.8) / std::pow((double)score.beatmapMaxCombo, 0.8), 1.0);
+	// miss penalty
+	// see https://github.com/ppy/osu/pull/16280/
+	if (effectiveMissCount > 0)
+		speedValue *= 0.96 / ((effectiveMissCount / (4 * std::pow(std::log(attributes.SpeedDifficultStrainCount), 0.94))) + 1);
 
 	// ar bonus
 	double approachRateFactor = 0.0; // see https://github.com/ppy/osu-performance/pull/125/

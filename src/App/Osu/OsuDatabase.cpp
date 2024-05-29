@@ -1891,7 +1891,7 @@ void OsuDatabase::loadStars()
 	debugLog("OsuDatabase::loadStars()\n");
 
 	const UString starsFilePath = "stars.cache";
-	const int starsCacheVersion = 20221108;
+	const int starsCacheVersion = 20240526;
 
 	OsuFile cache(starsFilePath, false);
 	if (cache.isReady())
@@ -1942,7 +1942,7 @@ void OsuDatabase::saveStars()
 	debugLog("Osu: Saving stars ...\n");
 
 	const UString starsFilePath = "stars.cache";
-	const int starsCacheVersion = 20221108;
+	const int starsCacheVersion = 20240526;
 
 	//const double startTime = engine->getTimeReal();
 	{

@@ -107,17 +107,17 @@ private:
 class OsuDifficultyCalculator
 {
 public:
-	static constexpr const int PP_ALGORITHM_VERSION = 20220902;
+	static constexpr const int PP_ALGORITHM_VERSION = 20240526;
 
 public:
 	// stars, fully static
-	static double calculateStarDiffForHitObjects(std::vector<OsuDifficultyHitObject> &sortedHitObjects, float CS, float OD, float speedMultiplier, bool relax, bool touchDevice, double *aim, double* aimSliderFactor, double *speed, double *speedNotes, int upToObjectIndex = -1, std::vector<double> *outAimStrains = NULL, std::vector<double> *outSpeedStrains = NULL);
+	static double calculateStarDiffForHitObjects(std::vector<OsuDifficultyHitObject> &sortedHitObjects, float CS, float OD, float speedMultiplier, bool relax, bool touchDevice, double *aim, double* aimSliderFactor, double* difficultAimStrains, double *speed, double *speedNotes, double* difficultSpeedStrains, int upToObjectIndex = -1, std::vector<double> *outAimStrains = NULL, std::vector<double> *outSpeedStrains = NULL);
 
 	// pp, use runtime mods (convenience)
-	static double calculatePPv2(Osu *osu, OsuBeatmap *beatmap, double aim, double aimSliderFactor, double speed, double speedNotes, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo = -1, int misses = 0, int c300 = -1, int c100 = 0, int c50 = 0);
+	static double calculatePPv2(Osu *osu, OsuBeatmap *beatmap, double aim, double aimSliderFactor, double difficultAimStrains, double speed, double speedNotes, double difficultSpeedStrains, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo = -1, int misses = 0, int c300 = -1, int c100 = 0, int c50 = 0);
 
 	// pp, fully static
-	static double calculatePPv2(int modsLegacy, double timescale, double ar, double od, double aim, double aimSliderFactor, double speed, double speedNotes, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo, int misses, int c300, int c100, int c50);
+	static double calculatePPv2(int modsLegacy, double timescale, double ar, double od, double aim, double aimSliderFactor, double difficultAimStrains, double speed, double speedNotes, double difficultSpeedStrains, int numHitObjects, int numCircles, int numSliders, int numSpinners, int maxPossibleCombo, int combo, int misses, int c300, int c100, int c50);
 
 	// helper functions
 	static double calculateTotalStarsFromSkills(double aim, double speed);
@@ -129,8 +129,10 @@ private:
 	{
 		double AimStrain;
 		double SliderFactor;
+		double AimDifficultStrainCount;
 		double SpeedStrain;
 		double SpeedNoteCount;
+		double SpeedDifficultStrainCount;
 		double ApproachRate;
 		double OverallDifficulty;
 		int SliderCount;
