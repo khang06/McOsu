@@ -25,6 +25,7 @@
 #include "OsuModFPoSu.h"
 #include "OsuSkin.h"
 #include "OsuSkinImage.h"
+#include "OsuSimPadIntegration.h"
 
 #include "OsuBeatmap.h"
 #include "OsuDatabaseBeatmap.h"
@@ -3033,6 +3034,7 @@ void OsuHUD::drawInputOverlay(Graphics *g, int numK1, int numK2, int numM1, int 
 			Color color = colorIdle;
 			float animScale = 1.0f;
 			float animColor = 0.0f;
+			float lineScale = 0.0f;
 			switch (i)
 			{
 			case 0:
@@ -3042,6 +3044,8 @@ void OsuHUD::drawInputOverlay(Graphics *g, int numK1, int numK2, int numM1, int 
 				animColor = m_fInputoverlayK1AnimColor;
 				if (numK1 > 0)
 					textFont = textFontBold;
+				if (m_osu->getSimPad())
+					lineScale = m_osu->getSimPad()->getAnalogKey(0);
 				break;
 			case 1:
 				text = numK2 > 0 ? UString::format("%i", numK2) : UString("K2");
@@ -3050,6 +3054,8 @@ void OsuHUD::drawInputOverlay(Graphics *g, int numK1, int numK2, int numM1, int 
 				animColor = m_fInputoverlayK2AnimColor;
 				if (numK2 > 0)
 					textFont = textFontBold;
+				if (m_osu->getSimPad())
+					lineScale = m_osu->getSimPad()->getAnalogKey(1);
 				break;
 			case 2:
 				text = numM1 > 0 ? UString::format("%i", numM1) : UString("M1");
@@ -3071,10 +3077,11 @@ void OsuHUD::drawInputOverlay(Graphics *g, int numK1, int numK2, int numM1, int 
 
 			// key
 			const Vector2 pos = Vector2(xStart - (15.0f*oScale)*scale + 1, yStart + (19.0f*oScale + i*29.5f*oScale)*scale);
-			g->setColor(COLORf(1.0f,
-					(1.0f - animColor)*COLOR_GET_Rf(colorIdle) + animColor*COLOR_GET_Rf(color),
-					(1.0f - animColor)*COLOR_GET_Gf(colorIdle) + animColor*COLOR_GET_Gf(color),
-					(1.0f - animColor)*COLOR_GET_Bf(colorIdle) + animColor*COLOR_GET_Bf(color)));
+			const Color keyColor = COLORf(1.0f,
+				(1.0f - animColor) * COLOR_GET_Rf(colorIdle) + animColor * COLOR_GET_Rf(color),
+				(1.0f - animColor) * COLOR_GET_Gf(colorIdle) + animColor * COLOR_GET_Gf(color),
+				(1.0f - animColor) * COLOR_GET_Bf(colorIdle) + animColor * COLOR_GET_Bf(color));
+			g->setColor(keyColor);
 			inputoverlayKey->draw(g, pos, scale*animScale);
 
 			// text
@@ -3089,6 +3096,11 @@ void OsuHUD::drawInputOverlay(Graphics *g, int numK1, int numK2, int numM1, int 
 				g->drawString(textFont, text);
 			}
 			g->popTransform();
+
+			// line
+			const float lineHeight = 29.5f * oScale * scale * lineScale;
+			g->setColor(keyColor);
+			g->fillRect(xStart - (4.0f * oScale) * scale, yStart + (19.0f + i * 29.5f) * oScale * scale - lineHeight / 2.0f, (4.0f * oScale) * scale, lineHeight);
 		}
 	}
 }

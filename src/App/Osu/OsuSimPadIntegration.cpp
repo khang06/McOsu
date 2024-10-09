@@ -5,6 +5,7 @@
 void* OsuSimPadIntegration::ThreadProc(void* data) {
 	auto* self = (OsuSimPadIntegration*)data;
 	while (!self->m_bStopThread) {
+		/*
 		for (int i = 0; i < OsuSimPadIntegration::KEYS; i++) {
 			if (self->m_curColor[i] == self->m_lastColor[i])
 				continue;
@@ -20,6 +21,37 @@ void* OsuSimPadIntegration::ThreadProc(void* data) {
 
 			self->sendData(cmd);
 		}
+		*/
+
+		float alpha[2] = {
+			COLOR_GET_Af(self->m_curColor[0]),
+			COLOR_GET_Af(self->m_curColor[1]),
+		};
+		uint8_t cmd[64] = {
+			2,		// Report ID(?)
+			0x69,	// Command type
+			6,		// Param length
+			(uint8_t)(COLOR_GET_Ri(self->m_curColor[0]) * alpha[0]),
+			(uint8_t)(COLOR_GET_Gi(self->m_curColor[0]) * alpha[0]),
+			(uint8_t)(COLOR_GET_Bi(self->m_curColor[0]) * alpha[0]),
+			(uint8_t)(COLOR_GET_Ri(self->m_curColor[1]) * alpha[1]),
+			(uint8_t)(COLOR_GET_Gi(self->m_curColor[1]) * alpha[1]),
+			(uint8_t)(COLOR_GET_Bi(self->m_curColor[1]) * alpha[1]),
+		};
+		for (int i = 0; i < 9; i++)
+			cmd[9] += cmd[i];
+		if (hid_write(self->m_device, cmd, sizeof(cmd)) == -1) {
+			debugLog("hid_write failed: %S", hid_error(self->m_device));
+			return NULL;
+		};
+
+		uint8_t res[64];
+		if (hid_read_timeout(self->m_device, res, sizeof(res), 2000) == -1) {
+			debugLog("hid_read_timeout failed: %S", hid_error(self->m_device));
+			return NULL;
+		};
+		for (int i = 0; i < OsuSimPadIntegration::KEYS; i++)
+			self->m_fAnalog[i] = (res[i + 4] >> 1) / 40.0f;
 
 		env->sleep(5);
 	}
@@ -31,9 +63,10 @@ OsuSimPadIntegration::OsuSimPadIntegration() {
 	m_device = NULL;
 	for (int i = 0; i < OsuSimPadIntegration::KEYS; i++) {
 		m_wishColor[i] = 0xFFFFFFFF;
-		m_fAlpha[i] = 1.0;
+		m_fAlpha[i] = 1.0f;
 		m_curColor[i] = 0xFFFFFFFF;
 		m_lastColor[i] = 0xFFFFFFFF;
+		m_fAnalog[i] = 0.0f;
 	}
 
 	m_bStopThread = false;
@@ -49,7 +82,8 @@ void OsuSimPadIntegration::start() {
 
 	// Enumerate USB interfaces to find the one that actually controls the lights
 	// Hardcoded to SimPad v2 Anniversary Edition
-	auto* enum_list = hid_enumerate(0x8088, 0x0006);
+	//auto* enum_list = hid_enumerate(0x8088, 0x0006);
+	auto* enum_list = hid_enumerate(0x8089, 0x0009);
 	if (!enum_list) {
 		debugLog("hid_enumerate failed: %ls", hid_error(NULL));
 		stop();
@@ -58,7 +92,7 @@ void OsuSimPadIntegration::start() {
 
 	hid_device* handle = NULL;
 	for (auto* dev = enum_list; dev; dev = dev->next) {
-		if (dev->interface_number == 1) {
+		if (dev->usage_page == 0xFF00) {
 			handle = hid_open_path(dev->path);
 			if (!handle) {
 				debugLog("hid_open_path failed: %ls", hid_error(NULL));
@@ -122,6 +156,10 @@ void OsuSimPadIntegration::startFade(size_t key, float duration) {
 
 	m_fAlpha[key] = 1.0f;
 	anim->moveLinear(&m_fAlpha[key], 0.0, duration, true);
+}
+
+float OsuSimPadIntegration::getAnalogKey(size_t key) {
+	return m_fAnalog[key];
 }
 
 bool OsuSimPadIntegration::sendData(unsigned char data[6]) {

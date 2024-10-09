@@ -16,7 +16,8 @@ public:
 	void update();
 
 	void setColor(size_t key, Color color);
-	void startFade(size_t key, float duration = 0.25f);
+	void startFade(size_t key, float duration = 0.175f);
+	float getAnalogKey(size_t key);
 
 	bool isRunning() {
 		return m_device != NULL;
@@ -24,7 +25,7 @@ public:
 
 private:
 	static void* ThreadProc(void*);
-	bool sendData(unsigned char data[6]);
+	bool sendData(unsigned char data[2]);
 
 	McThread* m_updateThread;
 	bool m_bStopThread;
@@ -35,4 +36,6 @@ private:
 	float m_fAlpha[KEYS];
 	Color m_curColor[KEYS];
 	Color m_lastColor[KEYS];
+
+	float m_fAnalog[KEYS];
 };
