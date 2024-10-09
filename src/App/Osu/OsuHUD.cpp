@@ -44,151 +44,193 @@
 
 #include "OsuUIVolumeSlider.h"
 
+#include "DirectX11Interface.h"
 #include "OpenGLES2Interface.h"
 
-ConVar osu_automatic_cursor_size("osu_automatic_cursor_size", false);
+ConVar osu_automatic_cursor_size("osu_automatic_cursor_size", false, FCVAR_NONE);
 
-ConVar osu_cursor_alpha("osu_cursor_alpha", 1.0f);
-ConVar osu_cursor_scale("osu_cursor_scale", 1.5f);
-ConVar osu_cursor_expand_scale_multiplier("osu_cursor_expand_scale_multiplier", 1.3f);
-ConVar osu_cursor_expand_duration("osu_cursor_expand_duration", 0.1f);
-ConVar osu_cursor_trail_scale("osu_cursor_trail_scale", 1.0f);
-ConVar osu_cursor_trail_length("osu_cursor_trail_length", 0.17f, "how long unsmooth cursortrails should be, in seconds");
-ConVar osu_cursor_trail_spacing("osu_cursor_trail_spacing", 0.015f, "how big the gap between consecutive unsmooth cursortrail images should be, in seconds");
-ConVar osu_cursor_trail_alpha("osu_cursor_trail_alpha", 1.0f);
-ConVar osu_cursor_trail_smooth_force("osu_cursor_trail_smooth_force", false);
-ConVar osu_cursor_trail_smooth_length("osu_cursor_trail_smooth_length", 0.5f, "how long smooth cursortrails should be, in seconds");
-ConVar osu_cursor_trail_smooth_div("osu_cursor_trail_smooth_div", 4.0f, "divide the cursortrail.png image size by this much, for determining the distance to the next trail image");
-ConVar osu_cursor_trail_max_size("osu_cursor_trail_max_size", 2048, "maximum number of rendered trail images, array size limit");
-ConVar osu_cursor_trail_expand("osu_cursor_trail_expand", true, "if \"CursorExpand: 1\" in your skin.ini, whether the trail should then also expand or not");
-ConVar osu_cursor_ripple_duration("osu_cursor_ripple_duration", 0.7f, "time in seconds each cursor ripple is visible");
-ConVar osu_cursor_ripple_alpha("osu_cursor_ripple_alpha", 1.0f);
-ConVar osu_cursor_ripple_additive("osu_cursor_ripple_additive", true, "use additive blending");
-ConVar osu_cursor_ripple_anim_start_scale("osu_cursor_ripple_anim_start_scale", 0.05f, "start size multiplier");
-ConVar osu_cursor_ripple_anim_end_scale("osu_cursor_ripple_anim_end_scale", 0.5f, "end size multiplier");
-ConVar osu_cursor_ripple_anim_start_fadeout_delay("osu_cursor_ripple_anim_start_fadeout_delay", 0.0f, "delay in seconds after which to start fading out (limited by osu_cursor_ripple_duration of course)");
-ConVar osu_cursor_ripple_tint_r("osu_cursor_ripple_tint_r", 255, "from 0 to 255");
-ConVar osu_cursor_ripple_tint_g("osu_cursor_ripple_tint_g", 255, "from 0 to 255");
-ConVar osu_cursor_ripple_tint_b("osu_cursor_ripple_tint_b", 255, "from 0 to 255");
+ConVar osu_cursor_alpha("osu_cursor_alpha", 1.0f, FCVAR_NONE);
+ConVar osu_cursor_scale("osu_cursor_scale", 1.5f, FCVAR_NONE);
+ConVar osu_cursor_expand_scale_multiplier("osu_cursor_expand_scale_multiplier", 1.3f, FCVAR_NONE);
+ConVar osu_cursor_expand_duration("osu_cursor_expand_duration", 0.1f, FCVAR_NONE);
+ConVar osu_cursor_trail_scale("osu_cursor_trail_scale", 1.0f, FCVAR_NONE);
+ConVar osu_cursor_trail_length("osu_cursor_trail_length", 0.17f, FCVAR_NONE, "how long unsmooth cursortrails should be, in seconds");
+ConVar osu_cursor_trail_spacing("osu_cursor_trail_spacing", 0.015f, FCVAR_NONE, "how big the gap between consecutive unsmooth cursortrail images should be, in seconds");
+ConVar osu_cursor_trail_alpha("osu_cursor_trail_alpha", 1.0f, FCVAR_NONE);
+ConVar osu_cursor_trail_smooth_force("osu_cursor_trail_smooth_force", false, FCVAR_NONE);
+ConVar osu_cursor_trail_smooth_length("osu_cursor_trail_smooth_length", 0.5f, FCVAR_NONE, "how long smooth cursortrails should be, in seconds");
+ConVar osu_cursor_trail_smooth_div("osu_cursor_trail_smooth_div", 4.0f, FCVAR_NONE, "divide the cursortrail.png image size by this much, for determining the distance to the next trail image");
+ConVar osu_cursor_trail_max_size("osu_cursor_trail_max_size", 2048, FCVAR_NONE, "maximum number of rendered trail images, array size limit");
+ConVar osu_cursor_trail_expand("osu_cursor_trail_expand", true, FCVAR_NONE, "if \"CursorExpand: 1\" in your skin.ini, whether the trail should then also expand or not");
+ConVar osu_cursor_ripple_duration("osu_cursor_ripple_duration", 0.7f, FCVAR_NONE, "time in seconds each cursor ripple is visible");
+ConVar osu_cursor_ripple_alpha("osu_cursor_ripple_alpha", 1.0f, FCVAR_NONE);
+ConVar osu_cursor_ripple_additive("osu_cursor_ripple_additive", true, FCVAR_NONE, "use additive blending");
+ConVar osu_cursor_ripple_anim_start_scale("osu_cursor_ripple_anim_start_scale", 0.05f, FCVAR_NONE, "start size multiplier");
+ConVar osu_cursor_ripple_anim_end_scale("osu_cursor_ripple_anim_end_scale", 0.5f, FCVAR_NONE, "end size multiplier");
+ConVar osu_cursor_ripple_anim_start_fadeout_delay("osu_cursor_ripple_anim_start_fadeout_delay", 0.0f, FCVAR_NONE, "delay in seconds after which to start fading out (limited by osu_cursor_ripple_duration of course)");
+ConVar osu_cursor_ripple_tint_r("osu_cursor_ripple_tint_r", 255, FCVAR_NONE, "from 0 to 255");
+ConVar osu_cursor_ripple_tint_g("osu_cursor_ripple_tint_g", 255, FCVAR_NONE, "from 0 to 255");
+ConVar osu_cursor_ripple_tint_b("osu_cursor_ripple_tint_b", 255, FCVAR_NONE, "from 0 to 255");
 
-ConVar osu_hud_shift_tab_toggles_everything("osu_hud_shift_tab_toggles_everything", true);
-ConVar osu_hud_scale("osu_hud_scale", 1.0f);
-ConVar osu_hud_hiterrorbar_alpha("osu_hud_hiterrorbar_alpha", 1.0f, "opacity multiplier for entire hiterrorbar");
-ConVar osu_hud_hiterrorbar_bar_alpha("osu_hud_hiterrorbar_bar_alpha", 1.0f, "opacity multiplier for background color bar");
-ConVar osu_hud_hiterrorbar_centerline_alpha("osu_hud_hiterrorbar_centerline_alpha", 1.0f, "opacity multiplier for center line");
-ConVar osu_hud_hiterrorbar_entry_additive("osu_hud_hiterrorbar_entry_additive", true, "whether to use additive blending for all hit error entries/lines");
-ConVar osu_hud_hiterrorbar_entry_alpha("osu_hud_hiterrorbar_entry_alpha", 0.75f, "opacity multiplier for all hit error entries/lines");
-ConVar osu_hud_hiterrorbar_entry_300_r("osu_hud_hiterrorbar_entry_300_r", 50);
-ConVar osu_hud_hiterrorbar_entry_300_g("osu_hud_hiterrorbar_entry_300_g", 188);
-ConVar osu_hud_hiterrorbar_entry_300_b("osu_hud_hiterrorbar_entry_300_b", 231);
-ConVar osu_hud_hiterrorbar_entry_100_r("osu_hud_hiterrorbar_entry_100_r", 87);
-ConVar osu_hud_hiterrorbar_entry_100_g("osu_hud_hiterrorbar_entry_100_g", 227);
-ConVar osu_hud_hiterrorbar_entry_100_b("osu_hud_hiterrorbar_entry_100_b", 19);
-ConVar osu_hud_hiterrorbar_entry_50_r("osu_hud_hiterrorbar_entry_50_r", 218);
-ConVar osu_hud_hiterrorbar_entry_50_g("osu_hud_hiterrorbar_entry_50_g", 174);
-ConVar osu_hud_hiterrorbar_entry_50_b("osu_hud_hiterrorbar_entry_50_b", 70);
-ConVar osu_hud_hiterrorbar_entry_miss_r("osu_hud_hiterrorbar_entry_miss_r", 205);
-ConVar osu_hud_hiterrorbar_entry_miss_g("osu_hud_hiterrorbar_entry_miss_g", 0);
-ConVar osu_hud_hiterrorbar_entry_miss_b("osu_hud_hiterrorbar_entry_miss_b", 0);
-ConVar osu_hud_hiterrorbar_centerline_r("osu_hud_hiterrorbar_centerline_r", 255);
-ConVar osu_hud_hiterrorbar_centerline_g("osu_hud_hiterrorbar_centerline_g", 255);
-ConVar osu_hud_hiterrorbar_centerline_b("osu_hud_hiterrorbar_centerline_b", 255);
-ConVar osu_hud_hiterrorbar_entry_hit_fade_time("osu_hud_hiterrorbar_entry_hit_fade_time", 6.0f, "fade duration of 50/100/300 hit entries/lines in seconds");
-ConVar osu_hud_hiterrorbar_entry_miss_fade_time("osu_hud_hiterrorbar_entry_miss_fade_time", 4.0f, "fade duration of miss entries/lines in seconds");
-ConVar osu_hud_hiterrorbar_scale("osu_hud_hiterrorbar_scale", 1.0f);
-ConVar osu_hud_hiterrorbar_showmisswindow("osu_hud_hiterrorbar_showmisswindow", false);
-ConVar osu_hud_hiterrorbar_width_percent_with_misswindow("osu_hud_hiterrorbar_width_percent_with_misswindow", 0.4f);
-ConVar osu_hud_hiterrorbar_width_percent("osu_hud_hiterrorbar_width_percent", 0.15f);
-ConVar osu_hud_hiterrorbar_height_percent("osu_hud_hiterrorbar_height_percent", 0.007f);
-ConVar osu_hud_hiterrorbar_offset_percent("osu_hud_hiterrorbar_offset_percent", 0.0f);
-ConVar osu_hud_hiterrorbar_offset_bottom_percent("osu_hud_hiterrorbar_offset_bottom_percent", 0.0f);
-ConVar osu_hud_hiterrorbar_offset_top_percent("osu_hud_hiterrorbar_offset_top_percent", 0.0f);
-ConVar osu_hud_hiterrorbar_offset_left_percent("osu_hud_hiterrorbar_offset_left_percent", 0.0f);
-ConVar osu_hud_hiterrorbar_offset_right_percent("osu_hud_hiterrorbar_offset_right_percent", 0.0f);
-ConVar osu_hud_hiterrorbar_bar_width_scale("osu_hud_hiterrorbar_bar_width_scale", 0.6f);
-ConVar osu_hud_hiterrorbar_bar_height_scale("osu_hud_hiterrorbar_bar_height_scale", 3.4f);
-ConVar osu_hud_hiterrorbar_max_entries("osu_hud_hiterrorbar_max_entries", 32, "maximum number of entries/lines");
-ConVar osu_hud_hiterrorbar_hide_during_spinner("osu_hud_hiterrorbar_hide_during_spinner", true);
-ConVar osu_hud_hiterrorbar_mimic_stable("osu_hud_hiterrorbar_mimic_stable", true);
-ConVar osu_hud_scorebar_scale("osu_hud_scorebar_scale", 1.0f);
-ConVar osu_hud_scorebar_hide_during_breaks("osu_hud_scorebar_hide_during_breaks", true);
-ConVar osu_hud_scorebar_hide_anim_duration("osu_hud_scorebar_hide_anim_duration", 0.5f);
-ConVar osu_hud_combo_scale("osu_hud_combo_scale", 1.0f);
-ConVar osu_hud_score_scale("osu_hud_score_scale", 1.0f);
-ConVar osu_hud_accuracy_scale("osu_hud_accuracy_scale", 1.0f);
-ConVar osu_hud_progressbar_scale("osu_hud_progressbar_scale", 1.0f);
-ConVar osu_hud_playfield_border_size("osu_hud_playfield_border_size", 5.0f);
-ConVar osu_hud_statistics_scale("osu_hud_statistics_scale", 1.0f);
-ConVar osu_hud_statistics_spacing_scale("osu_hud_statistics_spacing_scale", 1.1f);
-ConVar osu_hud_statistics_offset_x("osu_hud_statistics_offset_x", 5.0f);
-ConVar osu_hud_statistics_offset_y("osu_hud_statistics_offset_y", 50.0f);
-ConVar osu_hud_statistics_pp_decimal_places("osu_hud_statistics_pp_decimal_places", 0, "number of decimal places for the live pp counter (min = 0, max = 2)");
-ConVar osu_hud_volume_duration("osu_hud_volume_duration", 1.0f);
-ConVar osu_hud_volume_size_multiplier("osu_hud_volume_size_multiplier", 1.5f);
-ConVar osu_hud_scoreboard_scale("osu_hud_scoreboard_scale", 1.0f);
-ConVar osu_hud_scoreboard_offset_y_percent("osu_hud_scoreboard_offset_y_percent", 0.11f);
-ConVar osu_hud_scoreboard_use_menubuttonbackground("osu_hud_scoreboard_use_menubuttonbackground", true);
-ConVar osu_hud_inputoverlay_scale("osu_hud_inputoverlay_scale", 1.0f);
-ConVar osu_hud_inputoverlay_offset_x("osu_hud_inputoverlay_offset_x", 0.0f);
-ConVar osu_hud_inputoverlay_offset_y("osu_hud_inputoverlay_offset_y", 0.0f);
-ConVar osu_hud_inputoverlay_anim_scale_duration("osu_hud_inputoverlay_anim_scale_duration", 0.16f);
-ConVar osu_hud_inputoverlay_anim_scale_multiplier("osu_hud_inputoverlay_anim_scale_multiplier", 0.8f);
-ConVar osu_hud_inputoverlay_anim_color_duration("osu_hud_inputoverlay_anim_color_duration", 0.1f);
-ConVar osu_hud_fps_smoothing("osu_hud_fps_smoothing", true);
-ConVar osu_hud_scrubbing_timeline_hover_tooltip_offset_multiplier("osu_hud_scrubbing_timeline_hover_tooltip_offset_multiplier", 1.0f);
-ConVar osu_hud_scrubbing_timeline_strains_height("osu_hud_scrubbing_timeline_strains_height", 200.0f);
-ConVar osu_hud_scrubbing_timeline_strains_alpha("osu_hud_scrubbing_timeline_strains_alpha", 0.4f);
-ConVar osu_hud_scrubbing_timeline_strains_aim_color_r("osu_hud_scrubbing_timeline_strains_aim_color_r", 0);
-ConVar osu_hud_scrubbing_timeline_strains_aim_color_g("osu_hud_scrubbing_timeline_strains_aim_color_g", 255);
-ConVar osu_hud_scrubbing_timeline_strains_aim_color_b("osu_hud_scrubbing_timeline_strains_aim_color_b", 0);
-ConVar osu_hud_scrubbing_timeline_strains_speed_color_r("osu_hud_scrubbing_timeline_strains_speed_color_r", 255);
-ConVar osu_hud_scrubbing_timeline_strains_speed_color_g("osu_hud_scrubbing_timeline_strains_speed_color_g", 0);
-ConVar osu_hud_scrubbing_timeline_strains_speed_color_b("osu_hud_scrubbing_timeline_strains_speed_color_b", 0);
+ConVar osu_hud_shift_tab_toggles_everything("osu_hud_shift_tab_toggles_everything", true, FCVAR_NONE);
+ConVar osu_hud_scale("osu_hud_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_alpha("osu_hud_hiterrorbar_alpha", 1.0f, FCVAR_NONE, "opacity multiplier for entire hiterrorbar");
+ConVar osu_hud_hiterrorbar_bar_alpha("osu_hud_hiterrorbar_bar_alpha", 1.0f, FCVAR_NONE, "opacity multiplier for background color bar");
+ConVar osu_hud_hiterrorbar_centerline_alpha("osu_hud_hiterrorbar_centerline_alpha", 1.0f, FCVAR_NONE, "opacity multiplier for center line");
+ConVar osu_hud_hiterrorbar_entry_additive("osu_hud_hiterrorbar_entry_additive", true, FCVAR_NONE, "whether to use additive blending for all hit error entries/lines");
+ConVar osu_hud_hiterrorbar_entry_alpha("osu_hud_hiterrorbar_entry_alpha", 0.75f, FCVAR_NONE, "opacity multiplier for all hit error entries/lines");
+ConVar osu_hud_hiterrorbar_entry_300_r("osu_hud_hiterrorbar_entry_300_r", 50, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_300_g("osu_hud_hiterrorbar_entry_300_g", 188, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_300_b("osu_hud_hiterrorbar_entry_300_b", 231, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_100_r("osu_hud_hiterrorbar_entry_100_r", 87, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_100_g("osu_hud_hiterrorbar_entry_100_g", 227, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_100_b("osu_hud_hiterrorbar_entry_100_b", 19, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_50_r("osu_hud_hiterrorbar_entry_50_r", 218, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_50_g("osu_hud_hiterrorbar_entry_50_g", 174, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_50_b("osu_hud_hiterrorbar_entry_50_b", 70, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_miss_r("osu_hud_hiterrorbar_entry_miss_r", 205, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_miss_g("osu_hud_hiterrorbar_entry_miss_g", 0, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_miss_b("osu_hud_hiterrorbar_entry_miss_b", 0, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_centerline_r("osu_hud_hiterrorbar_centerline_r", 255, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_centerline_g("osu_hud_hiterrorbar_centerline_g", 255, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_centerline_b("osu_hud_hiterrorbar_centerline_b", 255, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_hit_fade_time("osu_hud_hiterrorbar_entry_hit_fade_time", 6.0f, FCVAR_NONE, "fade duration of 50/100/300 hit entries/lines in seconds");
+ConVar osu_hud_hiterrorbar_entry_miss_fade_time("osu_hud_hiterrorbar_entry_miss_fade_time", 4.0f, FCVAR_NONE, "fade duration of miss entries/lines in seconds");
+ConVar osu_hud_hiterrorbar_entry_miss_height_multiplier("osu_hud_hiterrorbar_entry_miss_height_multiplier", 1.5f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_entry_misaim_height_multiplier("osu_hud_hiterrorbar_entry_misaim_height_multiplier", 4.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_scale("osu_hud_hiterrorbar_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_showmisswindow("osu_hud_hiterrorbar_showmisswindow", false, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_width_percent_with_misswindow("osu_hud_hiterrorbar_width_percent_with_misswindow", 0.4f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_width_percent("osu_hud_hiterrorbar_width_percent", 0.15f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_height_percent("osu_hud_hiterrorbar_height_percent", 0.007f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_offset_percent("osu_hud_hiterrorbar_offset_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_offset_bottom_percent("osu_hud_hiterrorbar_offset_bottom_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_offset_top_percent("osu_hud_hiterrorbar_offset_top_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_offset_left_percent("osu_hud_hiterrorbar_offset_left_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_offset_right_percent("osu_hud_hiterrorbar_offset_right_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_bar_width_scale("osu_hud_hiterrorbar_bar_width_scale", 0.6f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_bar_height_scale("osu_hud_hiterrorbar_bar_height_scale", 3.4f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_max_entries("osu_hud_hiterrorbar_max_entries", 32, FCVAR_NONE, "maximum number of entries/lines");
+ConVar osu_hud_hiterrorbar_hide_during_spinner("osu_hud_hiterrorbar_hide_during_spinner", true, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_mimic_stable("osu_hud_hiterrorbar_mimic_stable", true, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_ur_scale("osu_hud_hiterrorbar_ur_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_ur_alpha("osu_hud_hiterrorbar_ur_alpha", 0.5f, FCVAR_NONE, "opacity multiplier for unstable rate text above hiterrorbar");
+ConVar osu_hud_hiterrorbar_ur_offset_x_percent("osu_hud_hiterrorbar_ur_offset_x_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_hiterrorbar_ur_offset_y_percent("osu_hud_hiterrorbar_ur_offset_y_percent", 0.0f, FCVAR_NONE);
+ConVar osu_hud_scorebar_scale("osu_hud_scorebar_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_scorebar_hide_during_breaks("osu_hud_scorebar_hide_during_breaks", true, FCVAR_NONE);
+ConVar osu_hud_scorebar_hide_anim_duration("osu_hud_scorebar_hide_anim_duration", 0.5f, FCVAR_NONE);
+ConVar osu_hud_combo_scale("osu_hud_combo_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_score_scale("osu_hud_score_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_accuracy_scale("osu_hud_accuracy_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_progressbar_scale("osu_hud_progressbar_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_playfield_border_size("osu_hud_playfield_border_size", 5.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_scale("osu_hud_statistics_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_spacing_scale("osu_hud_statistics_spacing_scale", 1.1f, FCVAR_NONE);
+ConVar osu_hud_statistics_offset_x("osu_hud_statistics_offset_x", 5.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_offset_y("osu_hud_statistics_offset_y", 50.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_pp_decimal_places("osu_hud_statistics_pp_decimal_places", 0, FCVAR_NONE, "number of decimal places for the live pp counter (min = 0, max = 2)");
+ConVar osu_hud_statistics_pp_offset_x("osu_hud_statistics_pp_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_pp_offset_y("osu_hud_statistics_pp_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_perfectpp_offset_x("osu_hud_statistics_perfectpp_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_perfectpp_offset_y("osu_hud_statistics_perfectpp_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_misses_offset_x("osu_hud_statistics_misses_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_misses_offset_y("osu_hud_statistics_misses_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_sliderbreaks_offset_x("osu_hud_statistics_sliderbreaks_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_sliderbreaks_offset_y("osu_hud_statistics_sliderbreaks_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_maxpossiblecombo_offset_x("osu_hud_statistics_maxpossiblecombo_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_maxpossiblecombo_offset_y("osu_hud_statistics_maxpossiblecombo_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_livestars_offset_x("osu_hud_statistics_livestars_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_livestars_offset_y("osu_hud_statistics_livestars_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_totalstars_offset_x("osu_hud_statistics_totalstars_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_totalstars_offset_y("osu_hud_statistics_totalstars_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_bpm_offset_x("osu_hud_statistics_bpm_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_bpm_offset_y("osu_hud_statistics_bpm_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_ar_offset_x("osu_hud_statistics_ar_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_ar_offset_y("osu_hud_statistics_ar_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_cs_offset_x("osu_hud_statistics_cs_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_cs_offset_y("osu_hud_statistics_cs_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_od_offset_x("osu_hud_statistics_od_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_od_offset_y("osu_hud_statistics_od_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_hp_offset_x("osu_hud_statistics_hp_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_hp_offset_y("osu_hud_statistics_hp_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_hitwindow300_offset_x("osu_hud_statistics_hitwindow300_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_hitwindow300_offset_y("osu_hud_statistics_hitwindow300_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_nps_offset_x("osu_hud_statistics_nps_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_nps_offset_y("osu_hud_statistics_nps_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_nd_offset_x("osu_hud_statistics_nd_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_nd_offset_y("osu_hud_statistics_nd_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_ur_offset_x("osu_hud_statistics_ur_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_ur_offset_y("osu_hud_statistics_ur_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_hitdelta_offset_x("osu_hud_statistics_hitdelta_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_statistics_hitdelta_offset_y("osu_hud_statistics_hitdelta_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_volume_duration("osu_hud_volume_duration", 1.0f, FCVAR_NONE);
+ConVar osu_hud_volume_size_multiplier("osu_hud_volume_size_multiplier", 1.5f, FCVAR_NONE);
+ConVar osu_hud_scoreboard_scale("osu_hud_scoreboard_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_scoreboard_offset_y_percent("osu_hud_scoreboard_offset_y_percent", 0.11f, FCVAR_NONE);
+ConVar osu_hud_scoreboard_use_menubuttonbackground("osu_hud_scoreboard_use_menubuttonbackground", true, FCVAR_NONE);
+ConVar osu_hud_inputoverlay_scale("osu_hud_inputoverlay_scale", 1.0f, FCVAR_NONE);
+ConVar osu_hud_inputoverlay_offset_x("osu_hud_inputoverlay_offset_x", 0.0f, FCVAR_NONE);
+ConVar osu_hud_inputoverlay_offset_y("osu_hud_inputoverlay_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_hud_inputoverlay_anim_scale_duration("osu_hud_inputoverlay_anim_scale_duration", 0.16f, FCVAR_NONE);
+ConVar osu_hud_inputoverlay_anim_scale_multiplier("osu_hud_inputoverlay_anim_scale_multiplier", 0.8f, FCVAR_NONE);
+ConVar osu_hud_inputoverlay_anim_color_duration("osu_hud_inputoverlay_anim_color_duration", 0.1f, FCVAR_NONE);
+ConVar osu_hud_fps_smoothing("osu_hud_fps_smoothing", true, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_hover_tooltip_offset_multiplier("osu_hud_scrubbing_timeline_hover_tooltip_offset_multiplier", 1.0f, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_height("osu_hud_scrubbing_timeline_strains_height", 200.0f, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_alpha("osu_hud_scrubbing_timeline_strains_alpha", 0.4f, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_aim_color_r("osu_hud_scrubbing_timeline_strains_aim_color_r", 0, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_aim_color_g("osu_hud_scrubbing_timeline_strains_aim_color_g", 255, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_aim_color_b("osu_hud_scrubbing_timeline_strains_aim_color_b", 0, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_speed_color_r("osu_hud_scrubbing_timeline_strains_speed_color_r", 255, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_speed_color_g("osu_hud_scrubbing_timeline_strains_speed_color_g", 0, FCVAR_NONE);
+ConVar osu_hud_scrubbing_timeline_strains_speed_color_b("osu_hud_scrubbing_timeline_strains_speed_color_b", 0, FCVAR_NONE);
 
-ConVar osu_draw_cursor_trail("osu_draw_cursor_trail", true);
-ConVar osu_draw_cursor_ripples("osu_draw_cursor_ripples", false);
-ConVar osu_draw_hud("osu_draw_hud", true);
-ConVar osu_draw_scorebar("osu_draw_scorebar", true);
-ConVar osu_draw_scorebarbg("osu_draw_scorebarbg", true);
-ConVar osu_draw_hiterrorbar("osu_draw_hiterrorbar", true);
-ConVar osu_draw_hiterrorbar_bottom("osu_draw_hiterrorbar_bottom", true);
-ConVar osu_draw_hiterrorbar_top("osu_draw_hiterrorbar_top", false);
-ConVar osu_draw_hiterrorbar_left("osu_draw_hiterrorbar_left", false);
-ConVar osu_draw_hiterrorbar_right("osu_draw_hiterrorbar_right", false);
-ConVar osu_draw_progressbar("osu_draw_progressbar", true);
-ConVar osu_draw_combo("osu_draw_combo", true);
-ConVar osu_draw_score("osu_draw_score", true);
-ConVar osu_draw_accuracy("osu_draw_accuracy", true);
-ConVar osu_draw_target_heatmap("osu_draw_target_heatmap", true);
-ConVar osu_draw_scrubbing_timeline("osu_draw_scrubbing_timeline", true);
-ConVar osu_draw_scrubbing_timeline_breaks("osu_draw_scrubbing_timeline_breaks", true);
-ConVar osu_draw_scrubbing_timeline_strain_graph("osu_draw_scrubbing_timeline_strain_graph", false);
-ConVar osu_draw_continue("osu_draw_continue", true);
-ConVar osu_draw_scoreboard("osu_draw_scoreboard", true);
-ConVar osu_draw_inputoverlay("osu_draw_inputoverlay", true);
+ConVar osu_draw_cursor_trail("osu_draw_cursor_trail", true, FCVAR_NONE);
+ConVar osu_draw_cursor_ripples("osu_draw_cursor_ripples", false, FCVAR_NONE);
+ConVar osu_draw_hud("osu_draw_hud", true, FCVAR_NONE);
+ConVar osu_draw_scorebar("osu_draw_scorebar", true, FCVAR_NONE);
+ConVar osu_draw_scorebarbg("osu_draw_scorebarbg", true, FCVAR_NONE);
+ConVar osu_draw_hiterrorbar("osu_draw_hiterrorbar", true, FCVAR_NONE);
+ConVar osu_draw_hiterrorbar_ur("osu_draw_hiterrorbar_ur", true, FCVAR_NONE);
+ConVar osu_draw_hiterrorbar_bottom("osu_draw_hiterrorbar_bottom", true, FCVAR_NONE);
+ConVar osu_draw_hiterrorbar_top("osu_draw_hiterrorbar_top", false, FCVAR_NONE);
+ConVar osu_draw_hiterrorbar_left("osu_draw_hiterrorbar_left", false, FCVAR_NONE);
+ConVar osu_draw_hiterrorbar_right("osu_draw_hiterrorbar_right", false, FCVAR_NONE);
+ConVar osu_draw_progressbar("osu_draw_progressbar", true, FCVAR_NONE);
+ConVar osu_draw_combo("osu_draw_combo", true, FCVAR_NONE);
+ConVar osu_draw_score("osu_draw_score", true, FCVAR_NONE);
+ConVar osu_draw_accuracy("osu_draw_accuracy", true, FCVAR_NONE);
+ConVar osu_draw_target_heatmap("osu_draw_target_heatmap", true, FCVAR_NONE);
+ConVar osu_draw_scrubbing_timeline("osu_draw_scrubbing_timeline", true, FCVAR_NONE);
+ConVar osu_draw_scrubbing_timeline_breaks("osu_draw_scrubbing_timeline_breaks", true, FCVAR_NONE);
+ConVar osu_draw_scrubbing_timeline_strain_graph("osu_draw_scrubbing_timeline_strain_graph", false, FCVAR_NONE);
+ConVar osu_draw_continue("osu_draw_continue", true, FCVAR_NONE);
+ConVar osu_draw_scoreboard("osu_draw_scoreboard", true, FCVAR_NONE);
+ConVar osu_draw_inputoverlay("osu_draw_inputoverlay", true, FCVAR_NONE);
 
-ConVar osu_draw_statistics_misses("osu_draw_statistics_misses", false);
-ConVar osu_draw_statistics_sliderbreaks("osu_draw_statistics_sliderbreaks", false);
-ConVar osu_draw_statistics_perfectpp("osu_draw_statistics_perfectpp", false);
-ConVar osu_draw_statistics_maxpossiblecombo("osu_draw_statistics_maxpossiblecombo", false);
-ConVar osu_draw_statistics_livestars("osu_draw_statistics_livestars", false);
-ConVar osu_draw_statistics_totalstars("osu_draw_statistics_totalstars", false);
-ConVar osu_draw_statistics_bpm("osu_draw_statistics_bpm", false);
-ConVar osu_draw_statistics_ar("osu_draw_statistics_ar", false);
-ConVar osu_draw_statistics_cs("osu_draw_statistics_cs", false);
-ConVar osu_draw_statistics_od("osu_draw_statistics_od", false);
-ConVar osu_draw_statistics_hp("osu_draw_statistics_hp", false);
-ConVar osu_draw_statistics_nps("osu_draw_statistics_nps", false);
-ConVar osu_draw_statistics_nd("osu_draw_statistics_nd", false);
-ConVar osu_draw_statistics_ur("osu_draw_statistics_ur", false);
-ConVar osu_draw_statistics_pp("osu_draw_statistics_pp", false);
-ConVar osu_draw_statistics_hitwindow300("osu_draw_statistics_hitwindow300", false);
-ConVar osu_draw_statistics_hitdelta("osu_draw_statistics_hitdelta", false);
+ConVar osu_draw_statistics_misses("osu_draw_statistics_misses", false, FCVAR_NONE);
+ConVar osu_draw_statistics_sliderbreaks("osu_draw_statistics_sliderbreaks", false, FCVAR_NONE);
+ConVar osu_draw_statistics_perfectpp("osu_draw_statistics_perfectpp", false, FCVAR_NONE);
+ConVar osu_draw_statistics_maxpossiblecombo("osu_draw_statistics_maxpossiblecombo", false, FCVAR_NONE);
+ConVar osu_draw_statistics_livestars("osu_draw_statistics_livestars", false, FCVAR_NONE);
+ConVar osu_draw_statistics_totalstars("osu_draw_statistics_totalstars", false, FCVAR_NONE);
+ConVar osu_draw_statistics_bpm("osu_draw_statistics_bpm", false, FCVAR_NONE);
+ConVar osu_draw_statistics_ar("osu_draw_statistics_ar", false, FCVAR_NONE);
+ConVar osu_draw_statistics_cs("osu_draw_statistics_cs", false, FCVAR_NONE);
+ConVar osu_draw_statistics_od("osu_draw_statistics_od", false, FCVAR_NONE);
+ConVar osu_draw_statistics_hp("osu_draw_statistics_hp", false, FCVAR_NONE);
+ConVar osu_draw_statistics_nps("osu_draw_statistics_nps", false, FCVAR_NONE);
+ConVar osu_draw_statistics_nd("osu_draw_statistics_nd", false, FCVAR_NONE);
+ConVar osu_draw_statistics_ur("osu_draw_statistics_ur", false, FCVAR_NONE);
+ConVar osu_draw_statistics_pp("osu_draw_statistics_pp", false, FCVAR_NONE);
+ConVar osu_draw_statistics_hitwindow300("osu_draw_statistics_hitwindow300", false, FCVAR_NONE);
+ConVar osu_draw_statistics_hitdelta("osu_draw_statistics_hitdelta", false, FCVAR_NONE);
 
-ConVar osu_combo_anim1_duration("osu_combo_anim1_duration", 0.15f);
-ConVar osu_combo_anim1_size("osu_combo_anim1_size", 0.15f);
-ConVar osu_combo_anim2_duration("osu_combo_anim2_duration", 0.4f);
-ConVar osu_combo_anim2_size("osu_combo_anim2_size", 0.5f);
+ConVar osu_combo_anim1_duration("osu_combo_anim1_duration", 0.15f, FCVAR_NONE);
+ConVar osu_combo_anim1_size("osu_combo_anim1_size", 0.15f, FCVAR_NONE);
+ConVar osu_combo_anim2_duration("osu_combo_anim2_duration", 0.4f, FCVAR_NONE);
+ConVar osu_combo_anim2_size("osu_combo_anim2_size", 0.5f, FCVAR_NONE);
 
 OsuHUD::OsuHUD(Osu *osu) : OsuScreen(osu)
 {
@@ -218,7 +260,7 @@ OsuHUD::OsuHUD(Osu *osu) : OsuScreen(osu)
 
 	// resources
 	m_tempFont = engine->getResourceManager()->getFont("FONT_DEFAULT");
-	m_cursorTrailShader = engine->getResourceManager()->loadShader("cursortrail.vsh", "cursortrail.fsh", "cursortrail");
+	m_cursorTrailShader = engine->getResourceManager()->loadShader2("cursortrail.mcshader", "cursortrail");
 	m_cursorTrail.reserve(osu_cursor_trail_max_size.getInt()*2);
 	if (env->getOS() == Environment::OS::OS_HORIZON)
 		m_cursorTrail2.reserve(osu_cursor_trail_max_size.getInt()*2);
@@ -369,9 +411,9 @@ void OsuHUD::draw(Graphics *g)
 			if (osu_draw_hiterrorbar.getBool() && (beatmapStd == NULL || (!beatmapStd->isSpinnerActive() || !osu_hud_hiterrorbar_hide_during_spinner.getBool())) && !beatmap->isLoading())
 			{
 				if (beatmapStd != NULL)
-					drawHitErrorBar(g, OsuGameRules::getHitWindow300(beatmap), OsuGameRules::getHitWindow100(beatmap), OsuGameRules::getHitWindow50(beatmap), OsuGameRules::getHitWindowMiss(beatmap));
+					drawHitErrorBar(g, OsuGameRules::getHitWindow300(beatmap), OsuGameRules::getHitWindow100(beatmap), OsuGameRules::getHitWindow50(beatmap), OsuGameRules::getHitWindowMiss(beatmap), m_osu->getScore()->getUnstableRate());
 				else if (beatmapMania != NULL)
-					drawHitErrorBar(g, OsuGameRulesMania::getHitWindow300(beatmap), OsuGameRulesMania::getHitWindow100(beatmap), OsuGameRulesMania::getHitWindow50(beatmap), OsuGameRulesMania::getHitWindowMiss(beatmap));
+					drawHitErrorBar(g, OsuGameRulesMania::getHitWindow300(beatmap), OsuGameRulesMania::getHitWindow100(beatmap), OsuGameRulesMania::getHitWindow50(beatmap), OsuGameRulesMania::getHitWindowMiss(beatmap), m_osu->getScore()->getUnstableRate());
 			}
 		}
 
@@ -405,9 +447,9 @@ void OsuHUD::draw(Graphics *g)
 			if (osu_draw_hiterrorbar.getBool() && (beatmapStd == NULL || (!beatmapStd->isSpinnerActive() || !osu_hud_hiterrorbar_hide_during_spinner.getBool())) && !beatmap->isLoading())
 			{
 				if (beatmapStd != NULL)
-					drawHitErrorBar(g, OsuGameRules::getHitWindow300(beatmap), OsuGameRules::getHitWindow100(beatmap), OsuGameRules::getHitWindow50(beatmap), OsuGameRules::getHitWindowMiss(beatmap));
+					drawHitErrorBar(g, OsuGameRules::getHitWindow300(beatmap), OsuGameRules::getHitWindow100(beatmap), OsuGameRules::getHitWindow50(beatmap), OsuGameRules::getHitWindowMiss(beatmap), m_osu->getScore()->getUnstableRate());
 				else if (beatmapMania != NULL)
-					drawHitErrorBar(g, OsuGameRulesMania::getHitWindow300(beatmap), OsuGameRulesMania::getHitWindow100(beatmap), OsuGameRulesMania::getHitWindow50(beatmap), OsuGameRulesMania::getHitWindowMiss(beatmap));
+					drawHitErrorBar(g, OsuGameRulesMania::getHitWindow300(beatmap), OsuGameRulesMania::getHitWindow100(beatmap), OsuGameRulesMania::getHitWindow50(beatmap), OsuGameRulesMania::getHitWindowMiss(beatmap), m_osu->getScore()->getUnstableRate());
 			}
 		}
 	}
@@ -652,7 +694,7 @@ void OsuHUD::drawDummy(Graphics *g)
 		drawAccuracy(g, scoreEntry.accuracy*100.0f);
 
 	if (osu_draw_hiterrorbar.getBool())
-		drawHitErrorBar(g, 50, 100, 150, 400);
+		drawHitErrorBar(g, 50, 100, 150, 400, 70);
 }
 
 void OsuHUD::drawVR(Graphics *g, Matrix4 &mvp, OsuVR *vr)
@@ -911,8 +953,20 @@ void OsuHUD::drawCursorTrailInt(Graphics *g, Shader *trailShader, std::vector<CU
 					OpenGLES2Interface *gles2 = dynamic_cast<OpenGLES2Interface*>(g);
 					if (gles2 != NULL)
 					{
-						gles2->forceUpdateTransform();
-						Matrix4 mvp = gles2->getMVP();
+						g->forceUpdateTransform();
+						Matrix4 mvp = g->getMVP();
+						trailShader->setUniformMatrix4fv("mvp", mvp);
+					}
+				}
+#endif
+
+#ifdef MCENGINE_FEATURE_DIRECTX11
+				{
+					DirectX11Interface *dx11 = dynamic_cast<DirectX11Interface*>(g);
+					if (dx11 != NULL)
+					{
+						g->forceUpdateTransform();
+						Matrix4 mvp = g->getMVP();
 						trailShader->setUniformMatrix4fv("mvp", mvp);
 					}
 				}
@@ -1113,10 +1167,6 @@ void OsuHUD::drawPlayfieldBorder(Graphics *g, Vector2 playfieldCenter, Vector2 p
 	Vector2 playfieldBorderTopLeft = Vector2((int)(playfieldCenter.x - playfieldSize.x/2 - hitcircleDiameter/2 - borderSize), (int)(playfieldCenter.y - playfieldSize.y/2 - hitcircleDiameter/2 - borderSize));
 	Vector2 playfieldBorderSize = Vector2((int)(playfieldSize.x + hitcircleDiameter), (int)(playfieldSize.y + hitcircleDiameter));
 
-	// HACKHACK: force glDisable(GL_TEXTURE_2D) by drawPixel(), to avoid invisible border on maps without a background image
-	g->setColor(0x00000000);
-	g->drawPixel(-999,-999);
-
 	const Color innerColor = 0x44ffffff;
 	const Color outerColor = 0x00000000;
 
@@ -1126,7 +1176,8 @@ void OsuHUD::drawPlayfieldBorder(Graphics *g, Vector2 playfieldCenter, Vector2 p
 
 		// top
 		{
-			VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			static VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			vao.empty();
 
 			vao.addVertex(playfieldBorderTopLeft);
 			vao.addColor(outerColor);
@@ -1142,7 +1193,8 @@ void OsuHUD::drawPlayfieldBorder(Graphics *g, Vector2 playfieldCenter, Vector2 p
 
 		// left
 		{
-			VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			static VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			vao.empty();
 
 			vao.addVertex(playfieldBorderTopLeft);
 			vao.addColor(outerColor);
@@ -1158,7 +1210,8 @@ void OsuHUD::drawPlayfieldBorder(Graphics *g, Vector2 playfieldCenter, Vector2 p
 
 		// right
 		{
-			VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			static VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			vao.empty();
 
 			vao.addVertex(playfieldBorderTopLeft + Vector2(playfieldBorderSize.x + 2*borderSize, 0));
 			vao.addColor(outerColor);
@@ -1174,7 +1227,8 @@ void OsuHUD::drawPlayfieldBorder(Graphics *g, Vector2 playfieldCenter, Vector2 p
 
 		// bottom
 		{
-			VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			static VertexArrayObject vao(Graphics::PRIMITIVE::PRIMITIVE_QUADS);
+			vao.empty();
 
 			vao.addVertex(playfieldBorderTopLeft + Vector2(borderSize, playfieldBorderSize.y + borderSize));
 			vao.addColor(innerColor);
@@ -1256,6 +1310,7 @@ void OsuHUD::drawVolumeChange(Graphics *g)
 
 	const float dpiScale = Osu::getUIScale(m_osu);
 	const float sizeMultiplier = osu_hud_volume_size_multiplier.getFloat() * dpiScale;
+	const float height = m_osu->getScreenHeight() - m_volumeMusic->getPos().y;
 
 	// legacy
 	/*
@@ -1266,8 +1321,10 @@ void OsuHUD::drawVolumeChange(Graphics *g)
 	if (m_fVolumeChangeFade != 1.0f)
 	{
 		g->push3DScene(McRect(m_volumeMaster->getPos().x, m_volumeMaster->getPos().y, m_volumeMaster->getSize().x, (m_osu->getScreenHeight() - m_volumeMaster->getPos().y)*2.05f));
-		g->rotate3DScene(-(1.0f - m_fVolumeChangeFade)*90, 0, 0);
-		g->translate3DScene(0, (m_fVolumeChangeFade*60 - 60) * sizeMultiplier / 1.5f, ((m_fVolumeChangeFade)*500 - 500) * sizeMultiplier / 1.5f);
+		//g->rotate3DScene(-(1.0f - m_fVolumeChangeFade)*90, 0, 0);
+		//g->translate3DScene(0, (m_fVolumeChangeFade*60 - 60) * sizeMultiplier / 1.5f, ((m_fVolumeChangeFade)*500 - 500) * sizeMultiplier / 1.5f);
+		g->translate3DScene(0, (m_fVolumeChangeFade*height - height)*1.05f, 0.0f);
+
 	}
 
 	m_volumeMaster->setPos(m_osu->getScreenSize() - m_volumeMaster->getSize() - Vector2(m_volumeMaster->getMinimumExtraTextWidth(), m_volumeMaster->getSize().y));
@@ -2225,11 +2282,11 @@ void OsuHUD::drawHitErrorBar(Graphics *g, OsuBeatmapStandard *beatmapStd)
 	if (osu_draw_hud.getBool() || !osu_hud_shift_tab_toggles_everything.getBool())
 	{
 		if (osu_draw_hiterrorbar.getBool() && (!beatmapStd->isSpinnerActive() || !osu_hud_hiterrorbar_hide_during_spinner.getBool()) && !beatmapStd->isLoading())
-			drawHitErrorBar(g, OsuGameRules::getHitWindow300(beatmapStd), OsuGameRules::getHitWindow100(beatmapStd), OsuGameRules::getHitWindow50(beatmapStd), OsuGameRules::getHitWindowMiss(beatmapStd));
+			drawHitErrorBar(g, OsuGameRules::getHitWindow300(beatmapStd), OsuGameRules::getHitWindow100(beatmapStd), OsuGameRules::getHitWindow50(beatmapStd), OsuGameRules::getHitWindowMiss(beatmapStd), m_osu->getScore()->getUnstableRate());
 	}
 }
 
-void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100, float hitWindow50, float hitWindowMiss)
+void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100, float hitWindow50, float hitWindowMiss, int ur)
 {
 	const Vector2 center = Vector2(m_osu->getScreenWidth()/2.0f, m_osu->getScreenHeight() - m_osu->getScreenHeight()*2.15f*osu_hud_hiterrorbar_height_percent.getFloat()*osu_hud_scale.getFloat()*osu_hud_hiterrorbar_scale.getFloat() - m_osu->getScreenHeight()*osu_hud_hiterrorbar_offset_percent.getFloat());
 
@@ -2237,7 +2294,10 @@ void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100
 	{
 		g->pushTransform();
 		{
-			g->translate(center.x, center.y - (m_osu->getScreenHeight() * osu_hud_hiterrorbar_offset_bottom_percent.getFloat()));
+			const Vector2 localCenter = Vector2(center.x, center.y - (m_osu->getScreenHeight() * osu_hud_hiterrorbar_offset_bottom_percent.getFloat()));
+
+			drawHitErrorBarInt2(g, localCenter, ur);
+			g->translate(localCenter.x, localCenter.y);
 			drawHitErrorBarInt(g, hitWindow300, hitWindow100, hitWindow50, hitWindowMiss);
 		}
 		g->popTransform();
@@ -2256,8 +2316,11 @@ void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100
 	{
 		g->pushTransform();
 		{
+			const Vector2 localCenter = Vector2(center.x, m_osu->getScreenHeight() - center.y + (m_osu->getScreenHeight() * osu_hud_hiterrorbar_offset_top_percent.getFloat()));
+
 			g->scale(1, -1);
-			g->translate(center.x, m_osu->getScreenHeight() - center.y + (m_osu->getScreenHeight() * osu_hud_hiterrorbar_offset_top_percent.getFloat()));
+			//drawHitErrorBarInt2(g, localCenter, ur);
+			g->translate(localCenter.x, localCenter.y);
 			drawHitErrorBarInt(g, hitWindow300, hitWindow100, hitWindow50, hitWindowMiss);
 		}
 		g->popTransform();
@@ -2267,8 +2330,11 @@ void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100
 	{
 		g->pushTransform();
 		{
+			const Vector2 localCenter = Vector2(m_osu->getScreenHeight() - center.y + (m_osu->getScreenWidth() * osu_hud_hiterrorbar_offset_left_percent.getFloat()), m_osu->getScreenHeight()/2.0f);
+
 			g->rotate(90);
-			g->translate(m_osu->getScreenHeight() - center.y + (m_osu->getScreenWidth() * osu_hud_hiterrorbar_offset_left_percent.getFloat()), m_osu->getScreenHeight()/2.0f);
+			//drawHitErrorBarInt2(g, localCenter, ur);
+			g->translate(localCenter.x, localCenter.y);
 			drawHitErrorBarInt(g, hitWindow300, hitWindow100, hitWindow50, hitWindowMiss);
 		}
 		g->popTransform();
@@ -2278,9 +2344,12 @@ void OsuHUD::drawHitErrorBar(Graphics *g, float hitWindow300, float hitWindow100
 	{
 		g->pushTransform();
 		{
+			const Vector2 localCenter = Vector2(m_osu->getScreenWidth() - (m_osu->getScreenHeight() - center.y) - (m_osu->getScreenWidth() * osu_hud_hiterrorbar_offset_right_percent.getFloat()), m_osu->getScreenHeight()/2.0f);
+
 			g->scale(-1, 1);
 			g->rotate(-90);
-			g->translate(m_osu->getScreenWidth() - (m_osu->getScreenHeight() - center.y) - (m_osu->getScreenWidth() * osu_hud_hiterrorbar_offset_right_percent.getFloat()), m_osu->getScreenHeight()/2.0f);
+			//drawHitErrorBarInt2(g, localCenter, ur);
+			g->translate(localCenter.x, localCenter.y);
 			drawHitErrorBarInt(g, hitWindow300, hitWindow100, hitWindow50, hitWindowMiss);
 		}
 		g->popTransform();
@@ -2375,9 +2444,9 @@ void OsuHUD::drawHitErrorBarInt(Graphics *g, float hitWindow300, float hitWindow
 
 			float missHeightMultiplier = 1.0f;
 			if (m_hiterrors[i].miss)
-				missHeightMultiplier = 1.5f;
+				missHeightMultiplier = osu_hud_hiterrorbar_entry_miss_height_multiplier.getFloat();
 			if (m_hiterrors[i].misaim)
-				missHeightMultiplier = 4.0f;
+				missHeightMultiplier = osu_hud_hiterrorbar_entry_misaim_height_multiplier.getFloat();
 
 			//Color leftColor = COLOR((int)((255/2) * alphaEntry * fade), COLOR_GET_Ri(barColor), COLOR_GET_Gi(barColor), COLOR_GET_Bi(barColor));
 			//Color centerColor = COLOR((int)(COLOR_GET_Ai(barColor) * alphaEntry * fade), COLOR_GET_Ri(barColor), COLOR_GET_Gi(barColor), COLOR_GET_Bi(barColor));
@@ -2397,6 +2466,47 @@ void OsuHUD::drawHitErrorBarInt(Graphics *g, float hitWindow300, float hitWindow
 	{
 		g->setColor(COLOR(alphaCenterlineInt, clamp<int>(osu_hud_hiterrorbar_centerline_r.getInt(), 0, 255), clamp<int>(osu_hud_hiterrorbar_centerline_g.getInt(), 0, 255), clamp<int>(osu_hud_hiterrorbar_centerline_b.getInt(), 0, 255)));
 		g->fillRect(center.x - entryWidth/2.0f/2.0f, center.y - entryHeight/2.0f, entryWidth / 2.0f, entryHeight);
+	}
+}
+
+void OsuHUD::drawHitErrorBarInt2(Graphics *g, Vector2 center, int ur)
+{
+	const float alpha = osu_hud_hiterrorbar_alpha.getFloat() * osu_hud_hiterrorbar_ur_alpha.getFloat();
+	if (alpha <= 0.0f) return;
+
+	const float dpiScale = Osu::getUIScale(m_osu);
+
+	const float hitErrorBarSizeY = m_osu->getScreenHeight()*osu_hud_hiterrorbar_height_percent.getFloat()*osu_hud_scale.getFloat()*osu_hud_hiterrorbar_scale.getFloat();
+	const float entryHeight = hitErrorBarSizeY*osu_hud_hiterrorbar_bar_height_scale.getFloat();
+
+	if (osu_draw_hiterrorbar_ur.getBool())
+	{
+		g->pushTransform();
+		{
+			UString urText = UString::format("%i UR", ur);
+			McFont *urTextFont = m_osu->getSongBrowserFont();
+
+			const float hitErrorBarScale = osu_hud_scale.getFloat() * osu_hud_hiterrorbar_scale.getFloat();
+			const float urTextScale = hitErrorBarScale * osu_hud_hiterrorbar_ur_scale.getFloat() * 0.5f;
+			const float urTextWidth = urTextFont->getStringWidth(urText) * urTextScale;
+			const float urTextHeight = urTextFont->getHeight() * hitErrorBarScale;
+
+			g->scale(urTextScale, urTextScale);
+			g->translate((int)(center.x + (-urTextWidth/2.0f) + (urTextHeight)*(osu_hud_hiterrorbar_ur_offset_x_percent.getFloat())*dpiScale) + 1, (int)(center.y + (urTextHeight)*(osu_hud_hiterrorbar_ur_offset_y_percent.getFloat())*dpiScale - entryHeight/1.25f) + 1);
+
+			// shadow
+			g->setColor(0xff000000);
+			g->setAlpha(alpha);
+			g->drawString(urTextFont, urText);
+
+			g->translate(-1, -1);
+
+			// text
+			g->setColor(0xffffffff);
+			g->setAlpha(alpha);
+			g->drawString(urTextFont, urText);
+		}
+		g->popTransform();
 	}
 }
 
@@ -2433,7 +2543,9 @@ void OsuHUD::drawProgressBar(Graphics *g, float percent, bool waiting)
 		g->setColor(0xaaf2f2f2);
 
 	{
-		VertexArrayObject vao;
+		static VertexArrayObject vao;
+		vao.empty();
+
 		Vector2 prevVertex;
 		for (int i=0; i<num_segments+1; i++)
 		{
@@ -2462,9 +2574,7 @@ void OsuHUD::drawProgressBar(Graphics *g, float percent, bool waiting)
 		}
 
 		// draw it
-		///g->setAntialiasing(true); // commented for now
 		g->drawVAO(&vao);
-		///g->setAntialiasing(false);
 	}
 
 	// draw circularmetre
@@ -2511,7 +2621,9 @@ void OsuHUD::drawProgressBarVR(Graphics *g, Matrix4 &mvp, OsuVR *vr, float perce
 		g->setColor(0xaaf2f2f2);
 
 	{
-		VertexArrayObject vao;
+		static VertexArrayObject vao;
+		vao.empty();
+
 		Vector2 prevVertex;
 		for (int i=0; i<num_segments+1; i++)
 		{
@@ -2577,92 +2689,109 @@ void OsuHUD::drawStatistics(Graphics *g, int misses, int sliderbreaks, int maxPo
 		const int yDelta = (int)((m_osu->getTitleFont()->getHeight() + 10)*osu_hud_scale.getFloat()*osu_hud_statistics_scale.getFloat()*osu_hud_statistics_spacing_scale.getFloat());
 		if (osu_draw_statistics_pp.getBool())
 		{
+			g->translate(osu_hud_statistics_pp_offset_x.getInt(), osu_hud_statistics_pp_offset_y.getInt());
 			drawStatisticText(g, (osu_hud_statistics_pp_decimal_places.getInt() < 1 ? UString::format("%ipp", (int)std::round(pp)) : (osu_hud_statistics_pp_decimal_places.getInt() > 1 ? UString::format("%.2fpp", pp) : UString::format("%.1fpp", pp))));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_pp_offset_x.getInt(), yDelta - osu_hud_statistics_pp_offset_y.getInt());
 		}
 		if (osu_draw_statistics_perfectpp.getBool())
 		{
+			g->translate(osu_hud_statistics_perfectpp_offset_x.getInt(), osu_hud_statistics_perfectpp_offset_y.getInt());
 			drawStatisticText(g, (osu_hud_statistics_pp_decimal_places.getInt() < 1 ? UString::format("SS: %ipp", (int)std::round(ppfc)) : (osu_hud_statistics_pp_decimal_places.getInt() > 1 ? UString::format("SS: %.2fpp", ppfc) : UString::format("SS: %.1fpp", ppfc))));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_perfectpp_offset_x.getInt(), yDelta - osu_hud_statistics_perfectpp_offset_y.getInt());
 		}
 		if (osu_draw_statistics_misses.getBool())
 		{
+			g->translate(osu_hud_statistics_misses_offset_x.getInt(), osu_hud_statistics_misses_offset_y.getInt());
 			drawStatisticText(g, UString::format("Miss: %i", misses));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_misses_offset_x.getInt(), yDelta - osu_hud_statistics_misses_offset_y.getInt());
 		}
 		if (osu_draw_statistics_sliderbreaks.getBool())
 		{
+			g->translate(osu_hud_statistics_sliderbreaks_offset_x.getInt(), osu_hud_statistics_sliderbreaks_offset_y.getInt());
 			drawStatisticText(g, UString::format("SBrk: %i", sliderbreaks));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_sliderbreaks_offset_x.getInt(), yDelta - osu_hud_statistics_sliderbreaks_offset_y.getInt());
 		}
 		if (osu_draw_statistics_maxpossiblecombo.getBool())
 		{
+			g->translate(osu_hud_statistics_maxpossiblecombo_offset_x.getInt(), osu_hud_statistics_maxpossiblecombo_offset_y.getInt());
 			drawStatisticText(g, UString::format("FC: %ix", maxPossibleCombo));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_maxpossiblecombo_offset_x.getInt(), yDelta - osu_hud_statistics_maxpossiblecombo_offset_y.getInt());
 		}
 		if (osu_draw_statistics_livestars.getBool())
 		{
+			g->translate(osu_hud_statistics_livestars_offset_x.getInt(), osu_hud_statistics_livestars_offset_y.getInt());
 			drawStatisticText(g, UString::format("%.3g***", liveStars));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_livestars_offset_x.getInt(), yDelta - osu_hud_statistics_livestars_offset_y.getInt());
 		}
 		if (osu_draw_statistics_totalstars.getBool())
 		{
+			g->translate(osu_hud_statistics_totalstars_offset_x.getInt(), osu_hud_statistics_totalstars_offset_y.getInt());
 			drawStatisticText(g, UString::format("%.3g*", totalStars));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_totalstars_offset_x.getInt(), yDelta - osu_hud_statistics_totalstars_offset_y.getInt());
 		}
 		if (osu_draw_statistics_bpm.getBool())
 		{
+			g->translate(osu_hud_statistics_bpm_offset_x.getInt(), osu_hud_statistics_bpm_offset_y.getInt());
 			drawStatisticText(g, UString::format("BPM: %i", bpm));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_bpm_offset_x.getInt(), yDelta - osu_hud_statistics_bpm_offset_y.getInt());
 		}
 		if (osu_draw_statistics_ar.getBool())
 		{
 			ar = std::round(ar * 100.0f) / 100.0f;
+			g->translate(osu_hud_statistics_ar_offset_x.getInt(), osu_hud_statistics_ar_offset_y.getInt());
 			drawStatisticText(g, UString::format("AR: %g", ar));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_ar_offset_x.getInt(), yDelta - osu_hud_statistics_ar_offset_y.getInt());
 		}
 		if (osu_draw_statistics_cs.getBool())
 		{
 			cs = std::round(cs * 100.0f) / 100.0f;
+			g->translate(osu_hud_statistics_cs_offset_x.getInt(), osu_hud_statistics_cs_offset_y.getInt());
 			drawStatisticText(g, UString::format("CS: %g", cs));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_cs_offset_x.getInt(), yDelta - osu_hud_statistics_cs_offset_y.getInt());
 		}
 		if (osu_draw_statistics_od.getBool())
 		{
 			od = std::round(od * 100.0f) / 100.0f;
+			g->translate(osu_hud_statistics_od_offset_x.getInt(), osu_hud_statistics_od_offset_y.getInt());
 			drawStatisticText(g, UString::format("OD: %g", od));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_od_offset_x.getInt(), yDelta - osu_hud_statistics_od_offset_y.getInt());
 		}
 		if (osu_draw_statistics_hp.getBool())
 		{
 			hp = std::round(hp * 100.0f) / 100.0f;
+			g->translate(osu_hud_statistics_hp_offset_x.getInt(), osu_hud_statistics_hp_offset_y.getInt());
 			drawStatisticText(g, UString::format("HP: %g", hp));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_hp_offset_x.getInt(), yDelta - osu_hud_statistics_hp_offset_y.getInt());
 		}
 		if (osu_draw_statistics_hitwindow300.getBool())
 		{
+			g->translate(osu_hud_statistics_hitwindow300_offset_x.getInt(), osu_hud_statistics_hitwindow300_offset_y.getInt());
 			drawStatisticText(g, UString::format("300: +-%ims", (int)hitWindow300));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_hitwindow300_offset_x.getInt(), yDelta - osu_hud_statistics_hitwindow300_offset_y.getInt());
 		}
 		if (osu_draw_statistics_nps.getBool())
 		{
+			g->translate(osu_hud_statistics_nps_offset_x.getInt(), osu_hud_statistics_nps_offset_y.getInt());
 			drawStatisticText(g, UString::format("NPS: %i", nps));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_nps_offset_x.getInt(), yDelta - osu_hud_statistics_nps_offset_y.getInt());
 		}
 		if (osu_draw_statistics_nd.getBool())
 		{
+			g->translate(osu_hud_statistics_nd_offset_x.getInt(), osu_hud_statistics_nd_offset_y.getInt());
 			drawStatisticText(g, UString::format("ND: %i", nd));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_nd_offset_x.getInt(), yDelta - osu_hud_statistics_nd_offset_y.getInt());
 		}
 		if (osu_draw_statistics_ur.getBool())
 		{
+			g->translate(osu_hud_statistics_ur_offset_x.getInt(), osu_hud_statistics_ur_offset_y.getInt());
 			drawStatisticText(g, UString::format("UR: %i", ur));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_ur_offset_x.getInt(), yDelta - osu_hud_statistics_ur_offset_y.getInt());
 		}
 		if (osu_draw_statistics_hitdelta.getBool())
 		{
+			g->translate(osu_hud_statistics_hitdelta_offset_x.getInt(), osu_hud_statistics_hitdelta_offset_y.getInt());
 			drawStatisticText(g, UString::format("-%ims +%ims", std::abs(hitdeltaMin), hitdeltaMax));
-			g->translate(0, yDelta);
+			g->translate(-osu_hud_statistics_hitdelta_offset_x.getInt(), yDelta - osu_hud_statistics_hitdelta_offset_y.getInt());
 		}
 	}
 	g->popTransform();
@@ -3249,7 +3378,7 @@ void OsuHUD::animateVolumeChange()
 	else
 		anim->moveQuadOut(&m_fVolumeChangeFade, 1.0f, 0.1f * (1.0f - m_fVolumeChangeFade), true);
 
-	anim->moveQuadOut(&m_fVolumeChangeFade, 0.0f, 0.20f, osu_hud_volume_duration.getFloat(), false);
+	anim->moveQuadOut(&m_fVolumeChangeFade, 0.0f, 0.25f, osu_hud_volume_duration.getFloat(), false);
 	anim->moveQuadOut(&m_fLastVolume, m_osu_volume_master_ref->getFloat(), 0.15f, 0.0f, true);
 }
 

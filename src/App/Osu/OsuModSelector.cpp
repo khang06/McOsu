@@ -229,6 +229,9 @@ OsuModSelector::OsuModSelector(Osu *osu) : OsuScreen(osu)
 	// build experimental buttons
 	addExperimentalLabel(" Experimental Mods (!)");
 	addExperimentalCheckbox("FPoSu: Strafing", "Playfield moves in 3D space (see fposu_mod_strafing_...).\nOnly works in FPoSu mode!", convar->getConVarByName("fposu_mod_strafing"));
+#ifdef MCOSU_FPOSU_4D_MODE_FINISHED
+	addExperimentalCheckbox("FPoSu 4D: Z Wobble", "Each hitobject individually moves in 3D space (see fposu_mod_3d_depthwobble_...)\nOnly works in FPoSu \"4D Mode\"!", convar->getConVarByName("fposu_mod_3d_depthwobble"));
+#endif
 	addExperimentalCheckbox("Wobble", "Playfield rotates and moves.", convar->getConVarByName("osu_mod_wobble"));
 	addExperimentalCheckbox("AR Wobble", "Approach rate oscillates between -1 and +1.", convar->getConVarByName("osu_mod_arwobble"));
 	addExperimentalCheckbox("Approach Different", "Customize the approach circle animation.\nSee osu_mod_approach_different_style.\nSee osu_mod_approach_different_initial_size.", convar->getConVarByName("osu_mod_approach_different"));
@@ -243,7 +246,7 @@ OsuModSelector::OsuModSelector(Osu *osu) : OsuScreen(osu)
 	addExperimentalCheckbox("Full Alternate", "You can never use the same key twice in a row.", convar->getConVarByName("osu_mod_fullalternate"));
 	addExperimentalCheckbox("Jigsaw 1", "Unnecessary clicks count as misses.", convar->getConVarByName("osu_mod_jigsaw1"));
 	addExperimentalCheckbox("Jigsaw 2", "Massively reduced slider follow circle radius.", convar->getConVarByName("osu_mod_jigsaw2"));
-	addExperimentalCheckbox("Random", "Randomizes hitobject positions. (VERY experimental!)", convar->getConVarByName("osu_mod_random"));
+	m_experimentalModRandomCheckbox = addExperimentalCheckbox("Random", "Randomizes hitobject positions. (VERY experimental!)\nUse osu_mod_random_seed to set a fixed rng seed.", convar->getConVarByName("osu_mod_random"));
 	addExperimentalCheckbox("Reverse Sliders", "Reverses the direction of all sliders. (Reload beatmap to apply!)", convar->getConVarByName("osu_mod_reverse_sliders"));
 	addExperimentalCheckbox("No 50s", "Only 300s or 100s. Try harder.", convar->getConVarByName("osu_mod_no50s"));
 	addExperimentalCheckbox("No 100s no 50s", "300 or miss. PF \"lite\"", convar->getConVarByName("osu_mod_no100s"));
@@ -535,6 +538,10 @@ void OsuModSelector::update()
 		}
 	}
 
+	// some experimental mod tooltip overrides
+	if (m_experimentalModRandomCheckbox->isChecked() && m_osu->getSelectedBeatmap() != NULL)
+		m_experimentalModRandomCheckbox->setTooltipText(UString::format("Seed = %i", m_osu->getSelectedBeatmap()->getRandomSeed()));
+
 	// handle experimental mods visibility
 	bool experimentalModEnabled = false;
 	for (int i=0; i<m_experimentalMods.size(); i++)
@@ -627,7 +634,7 @@ void OsuModSelector::onKeyDown(KeyboardEvent &key)
 	if (key == KEY_1)
 		resetMods();
 
-	if (((key == KEY_F1 || key == (KEYCODE)OsuKeyBindings::TOGGLE_MODSELECT.getInt()) && !m_bWaitForF1KeyUp) || key == KEY_2 || key == (KEYCODE)OsuKeyBindings::GAME_PAUSE.getInt() || key == KEY_ESCAPE)
+	if (((key == KEY_F1 || key == (KEYCODE)OsuKeyBindings::TOGGLE_MODSELECT.getInt()) && !m_bWaitForF1KeyUp) || key == KEY_2 || key == (KEYCODE)OsuKeyBindings::GAME_PAUSE.getInt() || key == KEY_ESCAPE || key == KEY_ENTER)
 		close();
 
 	// mod hotkeys
@@ -1093,7 +1100,7 @@ CBaseUILabel *OsuModSelector::addExperimentalLabel(UString text)
 	return label;
 }
 
-CBaseUICheckbox *OsuModSelector::addExperimentalCheckbox(UString text, UString tooltipText, ConVar *cvar)
+OsuUICheckbox *OsuModSelector::addExperimentalCheckbox(UString text, UString tooltipText, ConVar *cvar)
 {
 	OsuUICheckbox *checkbox = new OsuUICheckbox(m_osu, 0, 0, 0, 35, text, text);
 	checkbox->setTooltipText(tooltipText);

@@ -42,7 +42,10 @@ public:
 	virtual ~OsuBeatmap();
 
 	virtual void draw(Graphics *g);
+	virtual void drawInt(Graphics *g);
 	virtual void drawVR(Graphics *g, Matrix4 &mvp, OsuVR *vr);
+	virtual void draw3D(Graphics *g);
+	virtual void draw3D2(Graphics *g);
 	void drawDebug(Graphics *g);
 	void drawBackground(Graphics *g);
 	virtual void update();
@@ -118,6 +121,7 @@ public:
 	// used by OsuHitObject children and OsuModSelector
 	inline Osu *getOsu() const {return m_osu;}
 	OsuSkin *getSkin() const; // maybe use this for beatmap skins, maybe
+	inline int getRandomSeed() const {return m_iRandomSeed;}
 
 	inline long getCurMusicPos() const {return m_iCurMusicPos;}
 	inline long getCurMusicPosWithOffsets() const {return m_iCurMusicPosWithOffsets;}
@@ -191,6 +195,7 @@ protected:
 	static ConVar *m_osu_drain_stable_hpbar_maximum_ref;
 	static ConVar *m_osu_volume_music_ref;
 	static ConVar *m_osu_mod_fposu_ref;
+	static ConVar *m_fposu_3d_ref;
 	static ConVar *m_fposu_draw_scorebarbg_on_top_ref;
 
 	static ConVar *m_osu_main_menu_shuffle_ref;
@@ -290,6 +295,7 @@ protected:
 	std::vector<OsuHitObject*> m_hitobjects;
 	std::vector<OsuHitObject*> m_hitobjectsSortedByEndTime;
 	std::vector<OsuHitObject*> m_misaimObjects;
+	int m_iRandomSeed;
 
 	// statistics
 	int m_iNPS;

@@ -15,6 +15,7 @@
 #include "CBaseUIContainer.h"
 #include "CBaseUIScrollView.h"
 #include "CBaseUILabel.h"
+#include "CBaseUIButton.h"
 
 #include "Osu.h"
 #include "OsuSkin.h"
@@ -35,8 +36,44 @@ OsuChangelog::OsuChangelog(Osu *osu) : OsuScreenBackable(osu)
 	std::vector<CHANGELOG> changelogs;
 
 	CHANGELOG alpha317;
-	alpha317.title = UString::format("33.05 (Build Date: %s, %s)", __DATE__, __TIME__); // (09.01.2022 - ?)
+	alpha317.title = UString::format("33.09 (Build Date: %s, %s)", __DATE__, __TIME__); // (09.01.2022 - ?)
+	alpha317.changes.push_back("- FPoSu: Added Skybox cubemap support (Options > FPoSu - Playfield > \"Skybox\", enabled by default)");
+	alpha317.changes.push_back("- FPoSu: Added Options > FPoSu - Playfield > \"Background Opacity\" (transparent playfield backgrounds so you can see the skybox/cube through it)");
+	alpha317.changes.push_back("- Added C/F4 hotkeys to pause music at main menu");
+	alpha317.changes.push_back("- Added ConVars (1): osu_stars_always_recalc_live_strains, osu_background_alpha");
+	alpha317.changes.push_back("- Added ConVars (2): osu_hud_hiterrorbar_entry_miss_height_multiplier, osu_hud_hiterrorbar_entry_misaim_height_multiplier");
+	alpha317.changes.push_back("- Updated bonus pp algorithm (see https://osu.ppy.sh/home/news/2024-03-19-changes-to-performance-points)");
+	alpha317.changes.push_back("- Increased performance of live star/pp calc (dramatically shorter loading times on long marathon maps etc.)");
+	alpha317.changes.push_back("- Increased osu_beatmap_max_num_hitobjects from 32768 to 40000");
+	alpha317.changes.push_back("- Fixed snd_restart not reloading skin sound buffers automatically");
+	alpha317.changes.push_back("- Fixed extremely rare cases of getting stuck on a black screen permanently due to quick menu navigation skills");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("- Added hittable dim (hitobjects outside even the miss-range are dimmed, see https://github.com/ppy/osu/pull/20572)");
+	alpha317.changes.push_back("- Added Options > Gameplay > HUD > \"Draw HitErrorBar UR\" (Unstable Rate text display above hiterrorbar, enabled by default)");
+	alpha317.changes.push_back("- Added ConVars (1): osu_hud_hiterrorbar_ur_scale, osu_hud_hiterrorbar_ur_alpha, osu_hud_hiterrorbar_ur_offset_x/y_percent");
+	alpha317.changes.push_back("- Added ConVars (2): osu_beatmap_max_num_hitobjects, osu_beatmap_max_num_slider_scoringtimes");
+	alpha317.changes.push_back("- Added ConVars (3): osu_hitobject_hittable_dim, osu_hitobject_hittable_dim_start_percent, osu_hitobject_hittable_dim_duration, osu_mod_mafham_ignore_hittable_dim");
+	alpha317.changes.push_back("- FPoSu: Updated FOV sliders to allow two decimal places");
+	alpha317.changes.push_back("- Updated supported beatmap version from 14 to 128 (lazer exports)");
+	alpha317.changes.push_back("- Updated \"Game Pause\" keybind to prevent binding to left mouse click (to avoid menu deadlocks)");
+	alpha317.changes.push_back("- Updated mod selection screen to also close when ENTER key is pressed");
+	alpha317.changes.push_back("- Fixed even more star calc crashes on stupid deliberate game-breaking beatmaps (~65k sliders * ~9k repeats * 234 ticks = ~126149263360 scoring events)");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("- Reenabled IME support to fix blocking keyboard language switching hotkeys (add \"-noime\" launch arg to get the old behavior back in case of problems)");
+	alpha317.changes.push_back("- Improved console autocomplete");
+	alpha317.changes.push_back("- Fixed pie progressbar fill being invisible under certain conditions");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("- Added ConVars: osu_mod_random_seed, osu_hud_statistics_*_offset_x/y, osu_slider_max_ticks");
+	alpha317.changes.push_back("- Updated mod selection screen to show rng seed when hovering over enabled \"Random\" experimental mod checkbox");
+	alpha317.changes.push_back("- Fixed another set of star calc crashes on stupid aspire beatmaps (lowered slider tick limit, no timingpoints)");
+	alpha317.changes.push_back("");
+	alpha317.changes.push_back("");
 	alpha317.changes.push_back("- Added option \"[Beta] RawInputBuffer\" (Options > Input > Mouse)");
+	alpha317.changes.push_back("- Added ConVars: osu_background_color_r/g/b");
+	alpha317.changes.push_back("- Linux: Fixed major executable corruption on newer distros (Ubuntu 23+) caused by gold linker (all files written were corrupt, e.g. scores.db/osu.cfg, also segfaults etc.)");
 	alpha317.changes.push_back("");
 	alpha317.changes.push_back("");
 	alpha317.changes.push_back("- Fixed visual vs scoring slider end check in new lazer star calc (@Khangaroo)");
@@ -830,10 +867,10 @@ OsuChangelog::OsuChangelog(Osu *osu) : OsuScreenBackable(osu)
 		// changes
 		for (int c=0; c<changelogs[i].changes.size(); c++)
 		{
-			class CustomCBaseUILabel : public CBaseUILabel
+			class CustomCBaseUILabel : public CBaseUIButton
 			{
 			public:
-				CustomCBaseUILabel(UString text) : CBaseUILabel(0, 0, 0, 0, "", text) {;}
+				CustomCBaseUILabel(UString text) : CBaseUIButton(0, 0, 0, 0, "", text) {;}
 
 				virtual void draw(Graphics *g)
 				{
@@ -846,12 +883,20 @@ OsuChangelog::OsuChangelog(Osu *osu) : OsuScreenBackable(osu)
 						g->fillRect(m_vPos.x - marginX, m_vPos.y - margin, m_vSize.x + marginX*2, m_vSize.y + margin*2);
 					}
 
-					CBaseUILabel::draw(g);
 					if (!m_bVisible) return;
+
+					g->setColor(m_textColor);
+					g->pushTransform();
+					{
+						g->translate((int)(m_vPos.x + m_vSize.x/2.0f - m_fStringWidth/2.0f), (int)(m_vPos.y + m_vSize.y/2.0f + m_fStringHeight/2.0f));
+						g->drawString(m_font, m_sText);
+					}
+					g->popTransform();
 				}
 			};
 
-			CBaseUILabel *change = new CustomCBaseUILabel(changelogs[i].changes[c]);
+			CBaseUIButton *change = new CustomCBaseUILabel(changelogs[i].changes[c]);
+			change->setClickCallback(fastdelegate::MakeDelegate(this, &OsuChangelog::onChangeClicked));
 
 			if (i > 0)
 				change->setTextColor(0xff888888);
@@ -930,7 +975,7 @@ void OsuChangelog::updateLayout()
 		changelog.title->setRelPos(15 * dpiScale, yCounter);
 		///yCounter += 10 * dpiScale;
 
-		for (CBaseUILabel *change : changelog.changes)
+		for (CBaseUIButton *change : changelog.changes)
 		{
 			change->onResized(); // HACKHACK: framework, setSizeToContent() does not update string metrics
 			change->setSizeToContent();
@@ -951,4 +996,22 @@ void OsuChangelog::onBack()
 	engine->getSound()->play(m_osu->getSkin()->getMenuClick());
 
 	m_osu->toggleChangelog();
+}
+
+void OsuChangelog::onChangeClicked(CBaseUIButton *button)
+{
+	const UString changeTextMaybeContainingClickableURL = button->getText();
+
+	const int maybeURLBeginIndex = changeTextMaybeContainingClickableURL.find("http");
+	if (maybeURLBeginIndex != -1 && changeTextMaybeContainingClickableURL.find("://") != -1)
+	{
+		UString url = changeTextMaybeContainingClickableURL.substr(maybeURLBeginIndex);
+		if (url.length() > 0 && url[url.length() - 1] == L')')
+			url = url.substr(0, url.length() - 1);
+
+		debugLog("url = %s\n", url.toUtf8());
+
+		m_osu->getNotificationOverlay()->addNotification("Opening browser, please wait ...", 0xffffffff, false, 0.75f);
+		env->openURLInDefaultBrowser(url);
+	}
 }

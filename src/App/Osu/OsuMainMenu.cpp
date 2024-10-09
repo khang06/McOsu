@@ -45,6 +45,8 @@
 #include "CBaseUIContainer.h"
 #include "CBaseUIButton.h"
 
+#include "DirectX11Interface.h"
+
 #define MCOSU_VERSION_TEXT "Version"
 #define MCOSU_BANNER_TEXT "-- dev --"
 UString OsuMainMenu::MCOSU_MAIN_BUTTON_TEXT = UString("kMcOsu");
@@ -135,11 +137,6 @@ public:
 		}
 		else
 		{
-			// HACKHACK: disable GL_TEXTURE_2D
-			// DEPRECATED LEGACY
-			g->setColor(0x00000000);
-			g->drawPixel(m_vPos.x, m_vPos.y);
-
 			g->setColor(0xffffffff);
 			VertexArrayObject vao;
 
@@ -209,22 +206,22 @@ private:
 
 ConVar osu_toggle_preview_music("osu_toggle_preview_music");
 
-ConVar osu_draw_menu_background("osu_draw_menu_background", true);
-ConVar osu_draw_main_menu_workshop_button("osu_draw_main_menu_workshop_button", true);
-ConVar osu_main_menu_startup_anim_duration("osu_main_menu_startup_anim_duration", 0.25f);
-ConVar osu_main_menu_use_slider_text("osu_main_menu_use_slider_text", true);
-ConVar osu_main_menu_slider_text_alpha("osu_main_menu_slider_text_alpha", 1.0f);
-ConVar osu_main_menu_slider_text_scale("osu_main_menu_slider_text_scale", 1.0f);
-ConVar osu_main_menu_slider_text_offset_x("osu_main_menu_slider_text_offset_x", 15.0f);
-ConVar osu_main_menu_slider_text_offset_y("osu_main_menu_slider_text_offset_y", 0.0f);
-ConVar osu_main_menu_shuffle("osu_main_menu_shuffle", false);
-ConVar osu_main_menu_alpha("osu_main_menu_alpha", 1.0f);
-ConVar osu_main_menu_friend("osu_main_menu_friend", true);
+ConVar osu_draw_menu_background("osu_draw_menu_background", true, FCVAR_NONE);
+ConVar osu_draw_main_menu_workshop_button("osu_draw_main_menu_workshop_button", true, FCVAR_NONE);
+ConVar osu_main_menu_startup_anim_duration("osu_main_menu_startup_anim_duration", 0.25f, FCVAR_NONE);
+ConVar osu_main_menu_use_slider_text("osu_main_menu_use_slider_text", true, FCVAR_NONE);
+ConVar osu_main_menu_slider_text_alpha("osu_main_menu_slider_text_alpha", 1.0f, FCVAR_NONE);
+ConVar osu_main_menu_slider_text_scale("osu_main_menu_slider_text_scale", 1.0f, FCVAR_NONE);
+ConVar osu_main_menu_slider_text_offset_x("osu_main_menu_slider_text_offset_x", 15.0f, FCVAR_NONE);
+ConVar osu_main_menu_slider_text_offset_y("osu_main_menu_slider_text_offset_y", 0.0f, FCVAR_NONE);
+ConVar osu_main_menu_shuffle("osu_main_menu_shuffle", false, FCVAR_NONE);
+ConVar osu_main_menu_alpha("osu_main_menu_alpha", 1.0f, FCVAR_NONE);
+ConVar osu_main_menu_friend("osu_main_menu_friend", true, FCVAR_NONE);
 
-ConVar osu_main_menu_banner_always_text("osu_main_menu_banner_always_text", "");
-ConVar osu_main_menu_banner_ifupdatedfromoldversion_text("osu_main_menu_banner_ifupdatedfromoldversion_text", "");
-ConVar osu_main_menu_banner_ifupdatedfromoldversion_le3300_text("osu_main_menu_banner_ifupdatedfromoldversion_le3300_text", "");
-ConVar osu_main_menu_banner_ifupdatedfromoldversion_le3303_text("osu_main_menu_banner_ifupdatedfromoldversion_le3303_text", "");
+ConVar osu_main_menu_banner_always_text("osu_main_menu_banner_always_text", "", FCVAR_NONE);
+ConVar osu_main_menu_banner_ifupdatedfromoldversion_text("osu_main_menu_banner_ifupdatedfromoldversion_text", "", FCVAR_NONE);
+ConVar osu_main_menu_banner_ifupdatedfromoldversion_le3300_text("osu_main_menu_banner_ifupdatedfromoldversion_le3300_text", "", FCVAR_NONE);
+ConVar osu_main_menu_banner_ifupdatedfromoldversion_le3303_text("osu_main_menu_banner_ifupdatedfromoldversion_le3303_text", "", FCVAR_NONE);
 
 ConVar *OsuMainMenu::m_osu_universal_offset_ref = NULL;
 ConVar *OsuMainMenu::m_osu_universal_offset_hardcoded_ref = NULL;
@@ -568,6 +565,13 @@ void OsuMainMenu::draw(Graphics *g)
 	{
 		UString bannerText = MCOSU_BANNER_TEXT;
 
+#ifdef MCENGINE_FEATURE_DIRECTX11
+
+		if (dynamic_cast<DirectX11Interface*>(engine->getGraphics()) != NULL)
+			bannerText = "-- DirectX11 Test - Unoptimized renderer (no batching etc.) - VR is not supported - Please report feedback on Discord/Steam Forums --";
+
+#endif
+
 #ifdef MCENGINE_FEATURE_BASS_WASAPI
 
 		bannerText = UString::format(convar->getConVarByName("win_snd_wasapi_exclusive")->getBool() ?
@@ -691,7 +695,7 @@ void OsuMainMenu::draw(Graphics *g)
 					const bool doDisableRenderTarget = (i+1 >= numHitObjects);
 					const bool doDrawSliderFrameBufferToScreen = false;
 
-					OsuSliderRenderer::draw(g, m_osu, sliderPointer->getVAO(), alwaysPoints, translation, scale, (to < 1.0f ? m_fMainMenuSliderTextRawHitCircleDiameter*scale : OsuSliderRenderer::UNIT_CIRCLE_VAO_DIAMETER), from, to, m_osu->getSkin()->getComboColorForCounter(sliderPointer->getColorCounter(), sliderPointer->getColorOffset()), 1.0f, 0, doEnableRenderTarget, doDisableRenderTarget, doDrawSliderFrameBufferToScreen);
+					OsuSliderRenderer::draw(g, m_osu, sliderPointer->getVAO(), alwaysPoints, translation, scale, (to < 1.0f ? m_fMainMenuSliderTextRawHitCircleDiameter*scale : OsuSliderRenderer::UNIT_CIRCLE_VAO_DIAMETER), from, to, m_osu->getSkin()->getComboColorForCounter(sliderPointer->getColorCounter(), sliderPointer->getColorOffset()), 1.0f, 1.0f, 0, doEnableRenderTarget, doDisableRenderTarget, doDrawSliderFrameBufferToScreen);
 				}
 			}
 		}
@@ -846,11 +850,6 @@ void OsuMainMenu::draw(Graphics *g)
 				vao.addVertex(innerRight.x, innerRight.y);
 				vao.addVertex(right.x, right.y);
 			}
-
-			// HACKHACK: disable GL_TEXTURE_2D
-			// DEPRECATED LEGACY
-			g->setColor(0x00000000);
-			g->drawPixel(-1, -1);
 
 			// left
 			g->setColor(0xffc8faf1);
@@ -1381,6 +1380,9 @@ void OsuMainMenu::onKeyDown(KeyboardEvent &e)
 		}
 	}
 
+	if (e == KEY_C || e == KEY_F4)
+		onPausePressed();
+
 	if (!m_bMenuElementsVisible)
 	{
 		if (e == KEY_P || e == KEY_ENTER)
@@ -1510,7 +1512,7 @@ void OsuMainMenu::animMainButton()
 
 	m_iMainMenuRandomAnimType = (rand() % 4) == 1 ? 1 : 0;
 	if (!m_bMainMenuAnimFadeToFriendForNextAnim && osu_main_menu_friend.getBool() && env->getOS() == Environment::OS::OS_WINDOWS) // NOTE: z buffer bullshit on other platforms >:(
-		m_bMainMenuAnimFadeToFriendForNextAnim = (rand() % 12) == 1;
+		m_bMainMenuAnimFadeToFriendForNextAnim = (rand() % 24) == 1;
 
 	m_fMainMenuAnim = 0.0f;
 	m_fMainMenuAnim1 = 0.0f;

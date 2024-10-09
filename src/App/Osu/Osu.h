@@ -5,6 +5,8 @@
 // $NoKeywords: $osu
 //===============================================================================//
 
+//#define MCOSU_FPOSU_4D_MODE_FINISHED
+
 #ifndef OSU_H
 #define OSU_H
 
@@ -243,6 +245,9 @@ private:
 
 	void onModMafhamChange(UString oldValue, UString newValue);
 	void onModFPoSuChange(UString oldValue, UString newValue);
+	void onModFPoSu3DChange(UString oldValue, UString newValue);
+	void onModFPoSu3DSpheresChange(UString oldValue, UString newValue);
+	void onModFPoSu3DSpheresAAChange(UString oldValue, UString newValue);
 
 	void onLetterboxingOffsetChange(UString oldValue, UString newValue);
 
@@ -265,6 +270,9 @@ private:
 	ConVar *m_osu_volume_effects_ref;
 	ConVar *m_osu_mod_mafham_ref;
 	ConVar *m_osu_mod_fposu_ref;
+	ConVar *m_fposu_3d_ref;
+	ConVar *m_fposu_3d_spheres_ref;
+	ConVar *m_fposu_3d_spheres_aa_ref;
 	ConVar *m_snd_change_check_interval_ref;
 	ConVar *m_ui_scrollview_scrollbarwidth_ref;
 	ConVar *m_mouse_raw_input_absolute_to_window_ref;
@@ -296,6 +304,7 @@ private:
 	OsuModFPoSu *m_fposu;
 
 	std::vector<OsuScreen*> m_screens;
+	float m_fPrevNoScreenVisibleWorkaroundTime;
 
 	// rendering
 	RenderTarget *m_backBuffer;
