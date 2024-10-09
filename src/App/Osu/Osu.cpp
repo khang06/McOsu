@@ -132,7 +132,7 @@ ConVar osu_hide_cursor_during_gameplay("osu_hide_cursor_during_gameplay", false,
 ConVar osu_alt_f4_quits_even_while_playing("osu_alt_f4_quits_even_while_playing", true, FCVAR_NONE);
 ConVar osu_win_disable_windows_key_while_playing("osu_win_disable_windows_key_while_playing", true, FCVAR_NONE);
 
-ConVar osu_simpad_integration("osu_simpad_integration", true);
+ConVar osu_simpad_integration("osu_simpad_integration", true, FCVAR_NONE);
 
 ConVar *Osu::version = &osu_version;
 ConVar *Osu::debug = &osu_debug;
